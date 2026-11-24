@@ -1,1 +1,92 @@
 
+name: Update Eurojackpot Draws JSON
+
+on:
+  schedule:
+    - cron: "0 6 * * 3,6"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-draws:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Fetch and parse Eurojackpot data
+        run: |
+          node -e '
+          const fs = require("fs");
+
+          async function run() {
+            const url = "https://www.eurojackpot.com/";
+            let html = "";
+            let fetchOk = false;
+            let errorMessage = "";
+
+            try {
+              const res = await fetch(url, {
+                headers: {
+                  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                  "Accept-Language": "en-US,en;q=0.9"
+                }
+              });
+              fetchOk = res.ok;
+              html = await res.text();
+              if (!res.ok) {
+                errorMessage = "HTTP status " + res.status;
+              }
+            } catch (err) {
+              errorMessage = err.message;
+            }
+
+            const cleanText = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+            const dateMatch = cleanText.match(/\b(\d{2}\.\d{2}\.(\d{4}))\b/);
+
+            const allNums = (cleanText.match(/\b([1-9]|[1-4][0-9]|50)\b/g) || []).map(Number);
+
+            const output = {
+              source: url,
+              fetchedOk: fetchOk,
+              error: errorMessage || null,
+              updatedAt: new Date().toISOString(),
+              detectedDate: dateMatch ? dateMatch[1] : null,
+              detectedYear: dateMatch ? Number(dateMatch[2]) : null,
+              sampleNumbersFound: allNums.slice(0, 25),
+              draws: []
+            };
+
+            if (dateMatch && allNums.length >= 7) {
+              output.draws.push({
+                year: Number(dateMatch[2]),
+                date: dateMatch[1],
+                mainNumbers: allNums.slice(0, 5),
+                euroNumbers: allNums.slice(5, 7).filter((n) => n >= 1 && n <= 12)
+              });
+            }
+
+            fs.writeFileSync("draws.json", JSON.stringify(output, null, 2), "utf8");
+          }
+
+          run();
+          '
+
+      - name: Commit and push draws.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add draws.json
+          if git diff --staged --quiet; then
+            echo "No changes in draws.json"
+          else
+            git commit -m "Update Eurojackpot draws.json"
+            git push
+          fi
