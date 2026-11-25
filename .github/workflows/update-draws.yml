@@ -20,93 +20,99 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Inspect EJP endpoints and probe APIs
+      - name: Install Playwright Chromium
+        run: |
+          npm init -y
+          npm install playwright
+          npx playwright install chromium
+
+      - name: Render page and extract Eurojackpot draw
         run: |
           node -e '
           const fs = require("fs");
-
-          const headers = {
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-            "Accept": "application/json, text/plain, */*;q=0.8",
-            "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7"
-          };
+          const { chromium } = require("playwright");
 
           async function run() {
-            const baseUrl = "https://www.eurojackpot.com/";
+            const url = "https://www.eurojackpot.com/";
             const output = {
-              source: baseUrl,
+              source: url,
               updatedAt: new Date().toISOString(),
-              ejpRoutesFound: [],
-              probes: [],
+              fetchedOk: false,
+              error: null,
+              detectedDate: null,
+              detectedYear: null,
+              availableYears: [],
+              availableDates: [],
               draws: []
             };
 
+            let browser;
             try {
-              const pageRes = await fetch(baseUrl, {
-                headers: {
-                  ...headers,
-                  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-                }
+              browser = await chromium.launch({ headless: true });
+              const context = await browser.newContext({
+                userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                locale: "de-DE"
               });
-              const html = await pageRes.text();
-              const mainJsMatch = html.match(/src=["'\'']([^"'\'']*main[^"'\'']*\.js)["'\'']/i);
+              const page = await context.newPage();
 
-              const candidates = new Set([
-                "https://www.eurojackpot.com/wp-json/ejp/v1/slug/home-page",
-                "https://www.eurojackpot.com/wp-json/ejp/v1/draws",
-                "https://www.eurojackpot.com/wp-json/ejp/v1/results",
-                "https://www.eurojackpot.com/wp-json/ejp/v1/latest",
-                "https://www.eurojackpot.com/api/drawvideo/videoid"
-              ]);
+              await page.goto(url, { waitUntil: "networkidle", timeout: 60000 });
 
-              if (mainJsMatch && mainJsMatch[1]) {
-                const mainJsUrl = new URL(mainJsMatch[1], baseUrl).toString();
-                const jsRes = await fetch(mainJsUrl, { headers: { ...headers, Accept: "*/*" } });
-                if (jsRes.ok) {
-                  const jsCode = await jsRes.text();
-                  const ejpMatches = jsCode.match(/["'\''](\/?wp-json\/ejp\/v1\/[a-zA-Z0-9_./-]+)["'\'']/g) || [];
-                  for (const m of ejpMatches) {
-                    const cleanRoute = m.slice(1, -1).replace(/^\/+/, "");
-                    const fullUrl = new URL(cleanRoute, baseUrl).toString();
-                    output.ejpRoutesFound.push(fullUrl);
-                    candidates.add(fullUrl);
-                  }
-                }
-              }
+              // Asteptam ca aplicatia Angular sa populeze numerele castigatoare
+              await page.waitForSelector(".winning-number", { timeout: 30000 });
+              await page.waitForTimeout(1500);
 
-              output.ejpRoutesFound = Array.from(new Set(output.ejpRoutesFound));
+              const extracted = await page.evaluate(() => {
+                const yearSelect = document.querySelector("select[formcontrolname=\"jahr\"]");
+                const dateSelect = document.querySelector("select[formcontrolname=\"datum\"]");
 
-              for (const url of Array.from(candidates).slice(0, 15)) {
-                try {
-                  const res = await fetch(url, { headers });
-                  const text = await res.text();
-                  let json = null;
-                  try {
-                    json = JSON.parse(text);
-                  } catch (_) {
-                    json = null;
-                  }
+                const years = yearSelect
+                  ? Array.from(yearSelect.options).map((o) => o.text.trim()).filter(Boolean)
+                  : [];
+                const selectedYear = yearSelect && yearSelect.selectedOptions[0]
+                  ? yearSelect.selectedOptions[0].text.trim()
+                  : null;
 
-                  output.probes.push({
-                    url,
-                    status: res.status,
-                    ok: res.ok,
-                    isJson: Boolean(json),
-                    topKeys: json && typeof json === "object" && !Array.isArray(json)
-                      ? Object.keys(json).slice(0, 20)
-                      : null,
-                    preview: text.slice(0, 300)
-                  });
-                } catch (err) {
-                  output.probes.push({
-                    url,
-                    ok: false,
-                    error: err.message
-                  });
-                }
+                const dates = dateSelect
+                  ? Array.from(dateSelect.options).map((o) => o.text.trim()).filter(Boolean)
+                  : [];
+                const selectedDate = dateSelect && dateSelect.selectedOptions[0]
+                  ? dateSelect.selectedOptions[0].text.trim()
+                  : null;
+
+                const numberNodes = Array.from(document.querySelectorAll(".winning-number"));
+                const numbers = numberNodes
+                  .map((el) => Number(el.textContent.trim()))
+                  .filter((n) => Number.isInteger(n) && n > 0);
+
+                return {
+                  years,
+                  selectedYear,
+                  dates,
+                  selectedDate,
+                  numbers
+                };
+              });
+
+              output.fetchedOk = true;
+              output.availableYears = extracted.years;
+              output.availableDates = extracted.dates.slice(0, 15);
+              output.detectedYear = extracted.selectedYear ? Number(extracted.selectedYear) : null;
+              output.detectedDate = extracted.selectedDate || null;
+
+              if (extracted.numbers.length >= 7) {
+                output.draws.push({
+                  year: output.detectedYear,
+                  date: output.detectedDate,
+                  mainNumbers: extracted.numbers.slice(0, 5),
+                  euroNumbers: extracted.numbers.slice(5, 7)
+                });
               }
             } catch (err) {
               output.error = err.message;
+            } finally {
+              if (browser) {
+                await browser.close();
+              }
             }
 
             fs.writeFileSync("draws.json", JSON.stringify(output, null, 2), "utf8");
@@ -114,6 +120,9 @@ jobs:
 
           run();
           '
+
+      - name: Clean temporary node files
+        run: rm -rf node_modules package.json package-lock.json
 
       - name: Commit and push draws.json
         run: |
