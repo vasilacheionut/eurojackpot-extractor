@@ -125,7 +125,11 @@ jobs:
                 return t === txt || t.includes(txt) || v === txt || v.includes(txt);
               });
               if (idx === -1) return null;
-              return { index: idx, value: el.options[idx].value, label: (el.options[idx].textContent || "").trim() };
+              return {
+                index: idx,
+                value: el.options[idx].value,
+                label: (el.options[idx].textContent || "").trim()
+              };
             }, targetText);
 
             if (!matchInfo) return false;
@@ -139,6 +143,13 @@ jobs:
             }, matchInfo.index);
 
             return true;
+          }
+
+          async function getSelectedDatumText(page) {
+            return page.locator("select[formcontrolname=\"datum\"]").evaluate((el) => {
+              const opt = el.selectedOptions && el.selectedOptions[0];
+              return opt ? (opt.textContent || "").trim() : "";
+            }).catch(() => "");
           }
 
           async function readWinningNumbers(page) {
@@ -239,7 +250,7 @@ jobs:
                   continue;
                 }
 
-                for (let w = 0; w < 20; w++) {
+                for (let w = 0; w < 25; w++) {
                   await page.waitForTimeout(200);
                   const curFirstDatum = await page.locator("select[formcontrolname=\"datum\"] option").first().textContent().catch(() => "");
                   if (curFirstDatum && curFirstDatum !== prevFirstDatum) break;
@@ -274,6 +285,10 @@ jobs:
 
                   let okDate = await selectOptionContaining(page, "select[formcontrolname=\"datum\"]", dt);
                   if (!okDate) {
+                    await page.waitForTimeout(500);
+                    okDate = await selectOptionContaining(page, "select[formcontrolname=\"datum\"]", dt);
+                  }
+                  if (!okDate) {
                     console.error(`Date ${dt} not found in dropdown for year ${yr}.`);
                     continue;
                   }
@@ -293,14 +308,12 @@ jobs:
                     }
                   }
 
-                  // Fallback only if the very first date on page happened to match initialDraw
+                  // Fallback when the draw is already displayed (e.g. initial draw or identical numbers)
                   if (!parsed) {
-                    const selectedText = await page.locator("select[formcontrolname=\"datum\"]").evaluate((el) => {
-                      const opt = el.selectedOptions && el.selectedOptions[0];
-                      return opt ? (opt.textContent || "").trim() : "";
-                    });
+                    const selectedText = await getSelectedDatumText(page);
                     const cur = await readWinningNumbers(page);
                     if (selectedText.includes(dt) && cur.mainNumbers.length === 5 && cur.euroNumbers.length === 2) {
+                      lastKey = `${cur.mainNumbers.join(",")}|${cur.euroNumbers.join(",")}`;
                       parsed = cur;
                     }
                   }
@@ -316,6 +329,8 @@ jobs:
                       drawsMap.set(dt, candidate);
                       fetchedCount++;
                     }
+                  } else {
+                    console.error(`Could not read valid numbers for date ${dt} (year ${yr}).`);
                   }
                 }
 
