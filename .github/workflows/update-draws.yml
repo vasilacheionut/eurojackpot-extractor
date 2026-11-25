@@ -45,8 +45,12 @@ jobs:
           }
 
           async function setSelectValue(page, selector, value) {
-            await page.locator(selector).selectOption(value);
-            await page.locator(selector).evaluate((el, val) => {
+            const loc = page.locator(selector).first();
+            try {
+              await loc.selectOption(value, { force: true, timeout: 8000 });
+            } catch (_) {}
+
+            await loc.evaluate((el, val) => {
               el.value = val;
               el.dispatchEvent(new Event("input", { bubbles: true }));
               el.dispatchEvent(new Event("change", { bubbles: true }));
@@ -72,7 +76,7 @@ jobs:
 
               if (!dateStr) {
                 const allText = (host.innerText || "").replace(/\s+/g, " ");
-                const matches = allText.match(/\b\d{2}\.\d{2}\.20\d{2}\b/g) || [];
+                const matches = allText.match(/\b\d{2}\.\d{2}\.\d{4}\b/g) || [];
                 if (matches.length > 0) dateStr = matches[0];
               }
 
@@ -123,7 +127,11 @@ jobs:
                   }
                 }
               }
-            } catch (_) {}
+            } catch (e) {
+              console.error("Warning reading existing draws.json:", e.message);
+            }
+
+            console.log("Loaded existing draws:", collectedMap.size);
 
             let browser;
             try {
@@ -138,8 +146,9 @@ jobs:
               });
               const page = await context.newPage();
 
-              await page.goto(url, { waitUntil: "networkidle", timeout: 45000 }).catch(() => {});
-              await page.waitForTimeout(3000);
+              await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
+              await page.waitForSelector("select[formcontrolname=\"jahr\"]", { timeout: 30000 });
+              await page.waitForTimeout(1500);
 
               const cookieButtons = [
                 "button:has-text(\"Accept\")",
@@ -150,8 +159,8 @@ jobs:
               for (const sel of cookieButtons) {
                 const btn = page.locator(sel).first();
                 if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-                  await btn.click().catch(() => {});
-                  await page.waitForTimeout(1500);
+                  await btn.click({ force: true }).catch(() => {});
+                  await page.waitForTimeout(1000);
                   break;
                 }
               }
@@ -164,24 +173,38 @@ jobs:
               );
 
               const yearsToProcess = yearOptions.length > 0 ? yearOptions : Array.from({ length: 15 }, (_, i) => String(2026 - i));
+              console.log("Years to process:", yearsToProcess.join(", "));
 
               for (const yr of yearsToProcess) {
-                await setSelectValue(page, "select[formcontrolname=\"jahr\"]", yr);
-                await page.waitForTimeout(700);
+                try {
+                  await setSelectValue(page, "select[formcontrolname=\"jahr\"]", yr);
+                  await page.waitForTimeout(600);
 
-                const dateValues = await page.locator("select[formcontrolname=\"datum\"] option").evaluateAll((opts) =>
-                  opts
-                    .map((o) => (o.value || "").trim())
-                    .filter((v) => v.length > 0)
-                );
+                  const dateValues = await page.locator("select[formcontrolname=\"datum\"] option").evaluateAll((opts) =>
+                    opts
+                      .map((o) => (o.value || "").trim())
+                      .filter((v) => v.length > 0)
+                  );
 
-                for (const dVal of dateValues) {
-                  await setSelectValue(page, "select[formcontrolname=\"datum\"]", dVal);
-                  await page.waitForTimeout(250);
-                  const draw = await readCurrentDraw(page, Number(yr));
-                  addDraw(draw);
+                  console.log(`Year ${yr}: found ${dateValues.length} dates`);
+
+                  for (const dVal of dateValues) {
+                    try {
+                      await setSelectValue(page, "select[formcontrolname=\"datum\"]", dVal);
+                      await page.waitForTimeout(150);
+                      const draw = await readCurrentDraw(page, Number(yr));
+                      addDraw(draw);
+                    } catch (dateErr) {
+                      console.error(`Error on year ${yr}, date ${dVal}:`, dateErr.message);
+                    }
+                  }
+                } catch (yrErr) {
+                  console.error(`Error processing year ${yr}:`, yrErr.message);
                 }
               }
+            } catch (err) {
+              console.error("Fatal browser error:", err);
+              process.exitCode = 1;
             } finally {
               if (browser) {
                 await browser.close();
@@ -192,6 +215,7 @@ jobs:
               (a, b) => parseDMYToNum(b.date) - parseDMYToNum(a.date)
             );
 
+            console.log("Total draws to save:", draws.length);
             fs.writeFileSync("draws.json", JSON.stringify({ draws }, null, 2), "utf8");
           }
 
