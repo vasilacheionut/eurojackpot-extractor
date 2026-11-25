@@ -26,24 +26,24 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Extract Eurojackpot draws history across all years
+      - name: Extract Eurojackpot draws history incrementally up to 2012
         run: |
           node -e '
           const fs = require("fs");
           const { chromium } = require("playwright");
 
-          const MAX_DRAWS_PER_RUN = 250;
-          const MAX_YEARS_PER_RUN = 20;
+          const MAX_NEW_DRAWS_PER_RUN = 200;
 
           async function run() {
             const url = "https://www.eurojackpot.com/";
 
+            let prevJson = {};
             let existingDraws = [];
             try {
               if (fs.existsSync("draws.json")) {
-                const prev = JSON.parse(fs.readFileSync("draws.json", "utf8"));
-                if (Array.isArray(prev.draws)) {
-                  existingDraws = prev.draws;
+                prevJson = JSON.parse(fs.readFileSync("draws.json", "utf8"));
+                if (Array.isArray(prevJson.draws)) {
+                  existingDraws = prevJson.draws;
                 }
               }
             } catch (_) {}
@@ -53,8 +53,8 @@ jobs:
               updatedAt: new Date().toISOString(),
               fetchedOk: false,
               error: null,
-              nextDrawDate: null,
-              latestDrawDate: null,
+              nextDrawDate: prevJson.nextDrawDate || null,
+              latestDrawDate: prevJson.latestDrawDate || null,
               totalDraws: 0,
               draws: []
             };
@@ -73,7 +73,7 @@ jobs:
               const page = await context.newPage();
 
               await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
-              await page.waitForTimeout(7000);
+              await page.waitForTimeout(6000);
 
               const cookieButtons = [
                 "button:has-text(\"Accept\")",
@@ -85,19 +85,20 @@ jobs:
                 const btn = page.locator(sel).first();
                 if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
                   await btn.click().catch(() => {});
-                  await page.waitForTimeout(2000);
+                  await page.waitForTimeout(1500);
                   break;
                 }
               }
 
-              await page.waitForTimeout(2500);
+              await page.waitForSelector("select[formcontrolname=\"datum\"]", { timeout: 25000 }).catch(() => {});
+              await page.waitForTimeout(1500);
 
-              async function readCurrentDraw() {
+              async function readPageState() {
                 return await page.evaluate(() => {
                   const host = document.querySelector("app-winning-numbers") || document.body;
 
                   const nextDateEl = host.querySelector(".next-win-date");
-                  const nextDrawDate = nextDateEl ? nextDateEl.textContent.replace(/\s+/g, " ").trim() : null;
+                  const nextDrawDate = nextDateEl ? nextDateEl.textContent.replace(/\s+/g, " ").trim() : "";
 
                   const yearSelect = host.querySelector("select[formcontrolname=\"jahr\"]");
                   const dateSelect = host.querySelector("select[formcontrolname=\"datum\"]");
@@ -196,18 +197,25 @@ jobs:
                 });
               }
 
-              const initial = await readCurrentDraw();
+              const initial = await readPageState();
               output.fetchedOk = true;
-              output.nextDrawDate = initial.nextDrawDate;
-              output.latestDrawDate = initial.selectedDateLabel;
+              if (initial.nextDrawDate) output.nextDrawDate = initial.nextDrawDate;
+              if (initial.selectedDateLabel) output.latestDrawDate = initial.selectedDateLabel;
 
               const collectedMap = new Map();
 
+              function extractShortDate(label) {
+                if (!label) return null;
+                const m = String(label).match(/\b(\d{2}\.\d{2}\.\d{4})\b/);
+                return m ? m[1] : String(label).trim();
+              }
+
               function addDraw(d) {
-                if (!d || !Array.isArray(d.mainNumbers) || d.mainNumbers.length !== 5) return;
-                if (!Array.isArray(d.euroNumbers) || d.euroNumbers.length !== 2) return;
+                if (!d || !Array.isArray(d.mainNumbers) || d.mainNumbers.length !== 5) return false;
+                if (!Array.isArray(d.euroNumbers) || d.euroNumbers.length !== 2) return false;
                 const key = d.date || d.dateLabel;
-                if (!key) return;
+                if (!key) return false;
+                if (collectedMap.has(key)) return false;
                 collectedMap.set(key, {
                   year: d.year || null,
                   date: d.date,
@@ -215,83 +223,89 @@ jobs:
                   mainNumbers: d.mainNumbers,
                   euroNumbers: d.euroNumbers
                 });
+                return true;
               }
 
               for (const oldDraw of existingDraws) {
                 addDraw(oldDraw);
               }
 
-              let extractedInRun = 0;
+              let addedThisRun = 0;
 
-              async function collectDatesForCurrentYear() {
-                const state = await readCurrentDraw();
+              async function collectCurrentYearDates() {
+                const state = await readPageState();
                 if (state.mainNumbers.length === 5 && state.euroNumbers.length === 2) {
-                  addDraw({
+                  const wasAdded = addDraw({
                     year: state.selectedYear ? Number(state.selectedYear) : null,
                     date: state.drawDate,
                     dateLabel: state.selectedDateLabel,
                     mainNumbers: state.mainNumbers,
                     euroNumbers: state.euroNumbers
                   });
-                  extractedInRun++;
+                  if (wasAdded) addedThisRun++;
                 }
 
                 const hasDateSelect = await page.locator("select[formcontrolname=\"datum\"]").count().then((c) => c > 0);
                 if (!hasDateSelect || !Array.isArray(state.dateOptions)) return;
 
                 for (let i = 1; i < state.dateOptions.length; i++) {
-                  if (extractedInRun >= MAX_DRAWS_PER_RUN) break;
+                  if (addedThisRun >= MAX_NEW_DRAWS_PER_RUN) break;
 
                   const opt = state.dateOptions[i];
-                  const prevSignature = JSON.stringify((await readCurrentDraw()).mainNumbers);
+                  const candidateKey = extractShortDate(opt.label);
+                  if (candidateKey && collectedMap.has(candidateKey)) {
+                    continue;
+                  }
 
+                  const prevSignature = JSON.stringify((await readPageState()).mainNumbers);
                   await page.selectOption("select[formcontrolname=\"datum\"]", { index: opt.index }).catch(() => {});
 
                   for (let step = 0; step < 12; step++) {
-                    await page.waitForTimeout(250);
-                    const check = await readCurrentDraw();
+                    await page.waitForTimeout(200);
+                    const check = await readPageState();
                     if (JSON.stringify(check.mainNumbers) !== prevSignature) {
                       break;
                     }
                   }
 
-                  const current = await readCurrentDraw();
+                  const current = await readPageState();
                   if (current.mainNumbers.length === 5 && current.euroNumbers.length === 2) {
-                    addDraw({
+                    const wasAdded = addDraw({
                       year: current.selectedYear ? Number(current.selectedYear) : null,
                       date: current.drawDate,
                       dateLabel: current.selectedDateLabel,
                       mainNumbers: current.mainNumbers,
                       euroNumbers: current.euroNumbers
                     });
-                    extractedInRun++;
+                    if (wasAdded) addedThisRun++;
                   }
                 }
               }
 
-              await collectDatesForCurrentYear();
+              await collectCurrentYearDates();
 
               const hasYearSelect = await page.locator("select[formcontrolname=\"jahr\"]").count().then((c) => c > 0);
               if (hasYearSelect && Array.isArray(initial.yearOptions) && initial.yearOptions.length > 1) {
-                const yearLimit = Math.min(initial.yearOptions.length, MAX_YEARS_PER_RUN);
-                for (let yIdx = 1; yIdx < yearLimit; yIdx++) {
-                  if (extractedInRun >= MAX_DRAWS_PER_RUN) break;
+                for (let yIdx = 1; yIdx < initial.yearOptions.length; yIdx++) {
+                  if (addedThisRun >= MAX_NEW_DRAWS_PER_RUN) break;
 
                   const yOpt = initial.yearOptions[yIdx];
-                  const prevYear = (await readCurrentDraw()).selectedYear;
+                  const targetYearStr = yOpt.label.trim();
 
                   await page.selectOption("select[formcontrolname=\"jahr\"]", { index: yOpt.index }).catch(() => {});
 
-                  for (let step = 0; step < 15; step++) {
+                  // Asteptam pana cand dropdown-ul de date se actualizeaza pentru anul selectat
+                  for (let step = 0; step < 25; step++) {
                     await page.waitForTimeout(250);
-                    const check = await readCurrentDraw();
-                    if (check.selectedYear && check.selectedYear !== prevYear) {
+                    const check = await readPageState();
+                    const firstDateLabel = check.dateOptions && check.dateOptions[0] ? check.dateOptions[0].label : "";
+                    if (check.selectedYear === targetYearStr && firstDateLabel.includes(targetYearStr)) {
                       break;
                     }
                   }
 
-                  await page.waitForTimeout(800);
-                  await collectDatesForCurrentYear();
+                  await page.waitForTimeout(600);
+                  await collectCurrentYearDates();
                 }
               }
 
@@ -306,6 +320,9 @@ jobs:
 
               output.draws = allDraws;
               output.totalDraws = allDraws.length;
+              if (!output.latestDrawDate && allDraws.length > 0) {
+                output.latestDrawDate = allDraws[0].dateLabel || allDraws[0].date;
+              }
             } catch (err) {
               output.error = err.message;
             } finally {
