@@ -26,24 +26,57 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Fetch Eurojackpot years, dates and draws
+      - name: Fetch Eurojackpot draws, build years/dates index and inspect APIs
         run: |
           node -e '
           const fs = require("fs");
           const { chromium } = require("playwright");
 
-          const MAX_NEW_DRAWS_PER_RUN = 500;
-
-          function extractShortDate(label) {
-            if (!label) return null;
-            const m = String(label).match(/\b(\d{2}\.\d{2}\.\d{4})\b/);
-            return m ? m[1] : String(label).trim();
-          }
-
           function inferYear(dateStr, fallbackYear) {
             const m = String(dateStr || "").match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
             if (m) return Number(m[3]);
             return fallbackYear ? Number(fallbackYear) : null;
+          }
+
+          function parseDMYToNum(dateStr) {
+            const m = String(dateStr || "").match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+            if (!m) return 0;
+            return Number(`${m[3]}${m[2]}${m[1]}`);
+          }
+
+          function buildYearsAndDates(drawsList) {
+            const yearSet = new Set();
+            const mapByYear = new Map();
+
+            for (const d of drawsList) {
+              const y = inferYear(d.date || d.dateLabel, d.year);
+              if (!y) continue;
+              yearSet.add(y);
+              const yKey = String(y);
+              if (!mapByYear.has(yKey)) {
+                mapByYear.set(yKey, new Map());
+              }
+              const dateKey = d.date || d.dateLabel;
+              if (dateKey && !mapByYear.get(yKey).has(dateKey)) {
+                mapByYear.get(yKey).set(dateKey, {
+                  date: d.date || null,
+                  dateLabel: d.dateLabel || d.date
+                });
+              }
+            }
+
+            const availableYears = Array.from(yearSet).sort((a, b) => b - a);
+            const datesByYear = {};
+
+            for (const y of availableYears) {
+              const yKey = String(y);
+              const entries = Array.from(mapByYear.get(yKey).values()).sort(
+                (a, b) => parseDMYToNum(b.date || b.dateLabel) - parseDMYToNum(a.date || a.dateLabel)
+              );
+              datesByYear[yKey] = entries;
+            }
+
+            return { availableYears, datesByYear };
           }
 
           async function run() {
@@ -69,12 +102,14 @@ jobs:
               latestDrawDate: prevJson.latestDrawDate || null,
               availableYears: [],
               datesByYear: {},
-              debugControls: null,
+              debugApiUrls: [],
               totalDraws: 0,
               draws: []
             };
 
+            const capturedResponses = [];
             let browser;
+
             try {
               browser = await chromium.launch({
                 headless: true,
@@ -86,6 +121,31 @@ jobs:
                 viewport: { width: 1280, height: 800 }
               });
               const page = await context.newPage();
+
+              page.on("response", async (res) => {
+                try {
+                  const rUrl = res.url();
+                  const ct = (res.headers()["content-type"] || "").toLowerCase();
+                  if (
+                    !rUrl.includes("google-analytics") &&
+                    !rUrl.includes("googletagmanager") &&
+                    !rUrl.includes("doubleclick") &&
+                    (ct.includes("json") || rUrl.includes("api") || rUrl.includes("draw") || rUrl.includes("eurojackpot") || rUrl.includes("zahlen") || rUrl.includes("ziehung"))
+                  ) {
+                    let bodyPreview = "";
+                    try {
+                      const txt = await res.text();
+                      bodyPreview = txt.slice(0, 300);
+                    } catch (_) {}
+                    capturedResponses.push({
+                      status: res.status(),
+                      contentType: ct,
+                      url: rUrl,
+                      preview: bodyPreview
+                    });
+                  }
+                } catch (_) {}
+              });
 
               await page.goto(url, { waitUntil: "networkidle", timeout: 45000 }).catch(() => {});
               await page.waitForTimeout(3000);
@@ -105,187 +165,37 @@ jobs:
                 }
               }
 
-              // Așteptăm popularea opțiunilor din select[formcontrolname="jahr"] și select[formcontrolname="datum"]
-              await page.waitForFunction(() => {
-                const ySel = document.querySelector("select[formcontrolname=\"jahr\"]");
-                const dSel = document.querySelector("select[formcontrolname=\"datum\"]");
-                return Boolean(ySel && ySel.options && ySel.options.length > 0 && dSel && dSel.options && dSel.options.length > 0);
-              }, { timeout: 25000 }).catch(() => {});
+              await page.waitForTimeout(2000);
 
-              async function readPageState() {
-                return await page.evaluate(() => {
-                  const host = document.querySelector("app-winning-numbers") || document.body;
+              const pageInfo = await page.evaluate(() => {
+                const host = document.querySelector("app-winning-numbers") || document.body;
+                const nextDateEl = host.querySelector(".next-win-date");
+                const nextDrawDate = nextDateEl ? nextDateEl.textContent.replace(/\s+/g, " ").trim() : "";
 
-                  const nextDateEl = host.querySelector(".next-win-date");
-                  const nextDrawDate = nextDateEl ? nextDateEl.textContent.replace(/\s+/g, " ").trim() : "";
+                const winningEls = Array.from(host.querySelectorAll(".winning-number"));
+                const nums = winningEls
+                  .map((el) => Number((el.textContent || "").trim()))
+                  .filter((n) => !Number.isNaN(n));
 
-                  const yearSelectEl = host.querySelector("select[formcontrolname=\"jahr\"]") || document.querySelector("select[formcontrolname=\"jahr\"]");
-                  const dateSelectEl = host.querySelector("select[formcontrolname=\"datum\"]") || document.querySelector("select[formcontrolname=\"datum\"]");
+                const allText = (host.innerText || "").replace(/\s+/g, " ");
+                const dateMatches = allText.match(/\b\d{2}\.\d{2}\.20\d{2}\b/g) || [];
 
-                  const selectedYear = yearSelectEl && yearSelectEl.selectedOptions[0]
-                    ? yearSelectEl.selectedOptions[0].text.trim()
-                    : null;
+                return {
+                  nextDrawDate,
+                  mainNumbers: nums.slice(0, 5),
+                  euroNumbers: nums.slice(5, 7),
+                  datesFoundInText: Array.from(new Set(dateMatches))
+                };
+              });
 
-                  const yearOptions = yearSelectEl
-                    ? Array.from(yearSelectEl.options).map((o, idx) => ({
-                        index: idx,
-                        value: o.value,
-                        label: (o.text || "").trim()
-                      }))
-                    : [];
-
-                  const selectedDateLabel = dateSelectEl && dateSelectEl.selectedOptions[0]
-                    ? dateSelectEl.selectedOptions[0].text.trim()
-                    : null;
-
-                  const dateOptions = dateSelectEl
-                    ? Array.from(dateSelectEl.options).map((o, idx) => ({
-                        index: idx,
-                        value: o.value,
-                        label: (o.text || "").trim()
-                      }))
-                    : [];
-
-                  const winningEls = Array.from(host.querySelectorAll(".winning-number"));
-                  let mainNumbers = [];
-                  let euroNumbers = [];
-
-                  if (winningEls.length >= 7) {
-                    const nums = winningEls
-                      .map((el) => Number((el.textContent || "").trim()))
-                      .filter((n) => !Number.isNaN(n));
-                    mainNumbers = nums.slice(0, 5);
-                    euroNumbers = nums.slice(5, 7);
-                  } else {
-                    const dateRect = dateSelectEl ? dateSelectEl.getBoundingClientRect() : { bottom: 0 };
-                    const allEls = Array.from(host.querySelectorAll("*"));
-                    let lowerBoundTop = Infinity;
-                    for (const el of allEls) {
-                      const t = (el.textContent || "").trim();
-                      if (/^(Show video|Prize breakdown|Video ansehen|Gewinnquoten)$/i.test(t) && el.children.length === 0) {
-                        const r = el.getBoundingClientRect();
-                        if (r.top > dateRect.bottom && r.top < lowerBoundTop) {
-                          lowerBoundTop = r.top;
-                        }
-                      }
-                    }
-
-                    const balls = [];
-                    for (const el of allEls) {
-                      if (el.children.length > 0) continue;
-                      if (el.closest("select") || el.closest("table")) continue;
-                      const style = window.getComputedStyle(el);
-                      if (style.display === "none" || style.visibility === "hidden") continue;
-                      const txt = (el.textContent || "").trim();
-                      if (/^([1-9]|[1-4][0-9]|50)$/.test(txt)) {
-                        const rect = el.getBoundingClientRect();
-                        if (rect.top > dateRect.bottom - 5 && rect.top < lowerBoundTop && rect.width >= 16 && rect.height >= 16) {
-                          balls.push({
-                            value: Number(txt),
-                            top: Math.round(rect.top),
-                            left: Math.round(rect.left)
-                          });
-                        }
-                      }
-                    }
-
-                    balls.sort((a, b) => (Math.abs(a.top - b.top) <= 14 ? a.left - b.left : a.top - b.top));
-                    const uniqueBalls = [];
-                    for (const b of balls) {
-                      const isDup = uniqueBalls.some(
-                        (u) => u.value === b.value && Math.abs(u.top - b.top) <= 5 && Math.abs(u.left - b.left) <= 5
-                      );
-                      if (!isDup) uniqueBalls.push(b);
-                    }
-                    const values = uniqueBalls.map((x) => x.value);
-                    mainNumbers = values.slice(0, 5);
-                    euroNumbers = values.slice(5, 7).filter((n) => n >= 1 && n <= 12);
-                  }
-
-                  const shortMatch = selectedDateLabel ? selectedDateLabel.match(/\b(\d{2}\.\d{2}\.\d{4})\b/) : null;
-                  const drawDate = shortMatch ? shortMatch[1] : selectedDateLabel;
-
-                  return {
-                    nextDrawDate,
-                    selectedYear,
-                    yearOptions,
-                    selectedDateLabel,
-                    drawDate,
-                    dateOptions,
-                    mainNumbers,
-                    euroNumbers,
-                    debugControls: {
-                      hasYearSelect: Boolean(yearSelectEl),
-                      yearOptionsCount: yearOptions.length,
-                      selectedYear,
-                      hasDateSelect: Boolean(dateSelectEl),
-                      dateOptionsCount: dateOptions.length,
-                      selectedDateLabel
-                    }
-                  };
-                });
-              }
-
-              async function selectYearIndex(index, expectedYearLabel, expectedYearNum) {
-                const yLoc = page.locator("select[formcontrolname=\"jahr\"]").first();
-                await yLoc.selectOption({ index }).catch(() => {});
-                await yLoc.dispatchEvent("change").catch(() => {});
-                await yLoc.dispatchEvent("input").catch(() => {});
-
-                for (let step = 0; step < 30; step++) {
-                  await page.waitForTimeout(250);
-                  const chk = await readPageState();
-                  const firstLabel = chk.dateOptions && chk.dateOptions[0] ? chk.dateOptions[0].label : "";
-                  if (
-                    chk.selectedYear === expectedYearLabel &&
-                    chk.dateOptions.length > 0 &&
-                    firstLabel.includes(String(expectedYearNum))
-                  ) {
-                    break;
-                  }
-                }
-                await page.waitForTimeout(400);
-              }
-
-              const initial = await readPageState();
               output.fetchedOk = true;
-              output.debugControls = initial.debugControls;
-              if (initial.nextDrawDate) output.nextDrawDate = initial.nextDrawDate;
-              if (initial.selectedDateLabel) output.latestDrawDate = initial.selectedDateLabel;
-
-              const yearEntries = (initial.yearOptions || [])
-                .map((y) => {
-                  const m = (y.label || y.value || "").match(/\b(20\d{2})\b/);
-                  return {
-                    ...y,
-                    yearNum: m ? Number(m[1]) : NaN
-                  };
-                })
-                .filter((y) => !Number.isNaN(y.yearNum) && y.yearNum >= 2012 && y.yearNum <= 2026)
-                .sort((a, b) => b.yearNum - a.yearNum);
-
-              output.availableYears = yearEntries.map((y) => y.yearNum);
-
-              const datesByYear = {};
-              for (const yEntry of yearEntries) {
-                const yKey = String(yEntry.yearNum);
-                const cur = await readPageState();
-                if (cur.selectedYear !== yEntry.label) {
-                  await selectYearIndex(yEntry.index, yEntry.label, yEntry.yearNum);
-                }
-                const st = await readPageState();
-                datesByYear[yKey] = (st.dateOptions || []).map((opt) => ({
-                  index: opt.index,
-                  value: opt.value,
-                  label: opt.label,
-                  date: extractShortDate(opt.label)
-                }));
+              if (pageInfo.nextDrawDate) output.nextDrawDate = pageInfo.nextDrawDate;
+              if (pageInfo.datesFoundInText && pageInfo.datesFoundInText[0]) {
+                output.latestDrawDate = pageInfo.datesFoundInText[0];
               }
-
-              output.datesByYear = datesByYear;
+              output.debugApiUrls = capturedResponses.slice(0, 25);
 
               const collectedMap = new Map();
-
               function addDraw(d) {
                 if (!d || !Array.isArray(d.mainNumbers) || d.mainNumbers.length !== 5) return false;
                 if (!Array.isArray(d.euroNumbers) || d.euroNumbers.length !== 2) return false;
@@ -313,74 +223,24 @@ jobs:
                 addDraw(oldDraw);
               }
 
-              let addedThisRun = 0;
-              const dLoc = page.locator("select[formcontrolname=\"datum\"]").first();
-
-              for (const yEntry of yearEntries) {
-                if (addedThisRun >= MAX_NEW_DRAWS_PER_RUN) break;
-
-                const yKey = String(yEntry.yearNum);
-                const optsForYear = datesByYear[yKey] || [];
-                const hasMissingInYear = optsForYear.some((o) => o.date && !collectedMap.has(o.date));
-                if (!hasMissingInYear) continue;
-
-                const cur = await readPageState();
-                if (cur.selectedYear !== yEntry.label) {
-                  await selectYearIndex(yEntry.index, yEntry.label, yEntry.yearNum);
-                }
-
-                const curState = await readPageState();
-                if (curState.drawDate && !collectedMap.has(curState.drawDate)) {
-                  if (addDraw({
-                    year: yEntry.yearNum,
-                    date: curState.drawDate,
-                    dateLabel: curState.selectedDateLabel,
-                    mainNumbers: curState.mainNumbers,
-                    euroNumbers: curState.euroNumbers
-                  })) {
-                    addedThisRun++;
-                  }
-                }
-
-                for (const opt of optsForYear) {
-                  if (addedThisRun >= MAX_NEW_DRAWS_PER_RUN) break;
-                  if (!opt.date || collectedMap.has(opt.date)) continue;
-
-                  const prevSig = JSON.stringify((await readPageState()).mainNumbers);
-                  await dLoc.selectOption({ index: opt.index }).catch(() => {});
-                  await dLoc.dispatchEvent("change").catch(() => {});
-                  await dLoc.dispatchEvent("input").catch(() => {});
-
-                  for (let step = 0; step < 15; step++) {
-                    await page.waitForTimeout(200);
-                    const chk = await readPageState();
-                    if (JSON.stringify(chk.mainNumbers) !== prevSig) {
-                      break;
-                    }
-                  }
-
-                  const after = await readPageState();
-                  if (addDraw({
-                    year: yEntry.yearNum,
-                    date: after.drawDate || opt.date,
-                    dateLabel: after.selectedDateLabel || opt.label,
-                    mainNumbers: after.mainNumbers,
-                    euroNumbers: after.euroNumbers
-                  })) {
-                    addedThisRun++;
-                  }
-                }
+              if (pageInfo.mainNumbers.length === 5 && pageInfo.euroNumbers.length === 2 && pageInfo.datesFoundInText[0]) {
+                const dStr = pageInfo.datesFoundInText[0];
+                addDraw({
+                  year: inferYear(dStr, 2026),
+                  date: dStr,
+                  dateLabel: dStr,
+                  mainNumbers: pageInfo.mainNumbers,
+                  euroNumbers: pageInfo.euroNumbers
+                });
               }
 
-              const allDraws = Array.from(collectedMap.values()).sort((a, b) => {
-                const parseDMY = (s) => {
-                  const m = (s || "").match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-                  if (!m) return 0;
-                  return Number(`${m[3]}${m[2]}${m[1]}`);
-                };
-                return parseDMY(b.date) - parseDMY(a.date);
-              });
+              const allDraws = Array.from(collectedMap.values()).sort(
+                (a, b) => parseDMYToNum(b.date) - parseDMYToNum(a.date)
+              );
 
+              const built = buildYearsAndDates(allDraws);
+              output.availableYears = built.availableYears;
+              output.datesByYear = built.datesByYear;
               output.draws = allDraws;
               output.totalDraws = allDraws.length;
               if (!output.latestDrawDate && allDraws.length > 0) {
