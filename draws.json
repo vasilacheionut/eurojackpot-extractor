@@ -1,11 +1,11 @@
 {
   "source": "https://www.eurojackpot.com/",
-  "updatedAt": "2026-11-25T10:02:12.038Z",
+  "updatedAt": "2026-11-25T10:09:16.364Z",
   "fetchedOk": true,
   "error": null,
   "nextDrawDate": "Friday, 27 November 2026",
   "latestDrawDate": "Tuesday, 24.11.2026",
-  "totalDraws": 30,
+  "totalDraws": 80,
   "draws": [
     {
       "year": 2026,
@@ -484,6 +484,806 @@
       ],
       "euroNumbers": [
         3,
+        6
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "11.08.2026",
+      "dateLabel": "Tuesday, 11.08.2026",
+      "mainNumbers": [
+        4,
+        11,
+        12,
+        16,
+        30
+      ],
+      "euroNumbers": [
+        8,
+        9
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "07.08.2026",
+      "dateLabel": "Friday, 07.08.2026",
+      "mainNumbers": [
+        1,
+        3,
+        6,
+        13,
+        23
+      ],
+      "euroNumbers": [
+        5,
+        7
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "04.08.2026",
+      "dateLabel": "Tuesday, 04.08.2026",
+      "mainNumbers": [
+        3,
+        17,
+        30,
+        35,
+        43
+      ],
+      "euroNumbers": [
+        1,
+        12
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "31.07.2026",
+      "dateLabel": "Friday, 31.07.2026",
+      "mainNumbers": [
+        4,
+        10,
+        20,
+        40,
+        41
+      ],
+      "euroNumbers": [
+        4,
+        6
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "28.07.2026",
+      "dateLabel": "Tuesday, 28.07.2026",
+      "mainNumbers": [
+        11,
+        25,
+        40,
+        41,
+        45
+      ],
+      "euroNumbers": [
+        1,
+        5
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "24.07.2026",
+      "dateLabel": "Friday, 24.07.2026",
+      "mainNumbers": [
+        4,
+        6,
+        8,
+        17,
+        22
+      ],
+      "euroNumbers": [
+        7,
+        10
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "21.07.2026",
+      "dateLabel": "Tuesday, 21.07.2026",
+      "mainNumbers": [
+        4,
+        8,
+        10,
+        17,
+        37
+      ],
+      "euroNumbers": [
+        5,
+        7
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "17.07.2026",
+      "dateLabel": "Friday, 17.07.2026",
+      "mainNumbers": [
+        6,
+        21,
+        31,
+        47,
+        48
+      ],
+      "euroNumbers": [
+        2,
+        9
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "14.07.2026",
+      "dateLabel": "Tuesday, 14.07.2026",
+      "mainNumbers": [
+        5,
+        6,
+        17,
+        34,
+        36
+      ],
+      "euroNumbers": [
+        3,
+        11
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "10.07.2026",
+      "dateLabel": "Friday, 10.07.2026",
+      "mainNumbers": [
+        13,
+        25,
+        28,
+        42,
+        45
+      ],
+      "euroNumbers": [
+        5,
+        12
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "07.07.2026",
+      "dateLabel": "Tuesday, 07.07.2026",
+      "mainNumbers": [
+        6,
+        16,
+        24,
+        41,
+        46
+      ],
+      "euroNumbers": [
+        2,
+        3
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "03.07.2026",
+      "dateLabel": "Friday, 03.07.2026",
+      "mainNumbers": [
+        4,
+        9,
+        20,
+        25,
+        28
+      ],
+      "euroNumbers": [
+        1,
+        3
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "30.06.2026",
+      "dateLabel": "Tuesday, 30.06.2026",
+      "mainNumbers": [
+        12,
+        19,
+        34,
+        44,
+        50
+      ],
+      "euroNumbers": [
+        3,
+        8
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "26.06.2026",
+      "dateLabel": "Friday, 26.06.2026",
+      "mainNumbers": [
+        17,
+        25,
+        35,
+        39,
+        41
+      ],
+      "euroNumbers": [
+        5,
+        9
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "23.06.2026",
+      "dateLabel": "Tuesday, 23.06.2026",
+      "mainNumbers": [
+        24,
+        27,
+        43,
+        48,
+        50
+      ],
+      "euroNumbers": [
+        4,
+        12
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "19.06.2026",
+      "dateLabel": "Friday, 19.06.2026",
+      "mainNumbers": [
+        16,
+        27,
+        37,
+        42,
+        45
+      ],
+      "euroNumbers": [
+        5,
+        12
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "16.06.2026",
+      "dateLabel": "Tuesday, 16.06.2026",
+      "mainNumbers": [
+        9,
+        26,
+        29,
+        37,
+        42
+      ],
+      "euroNumbers": [
+        1,
+        7
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "12.06.2026",
+      "dateLabel": "Friday, 12.06.2026",
+      "mainNumbers": [
+        2,
+        4,
+        14,
+        18,
+        28
+      ],
+      "euroNumbers": [
+        9,
+        11
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "09.06.2026",
+      "dateLabel": "Tuesday, 09.06.2026",
+      "mainNumbers": [
+        1,
+        14,
+        22,
+        39,
+        48
+      ],
+      "euroNumbers": [
+        8,
+        11
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "05.06.2026",
+      "dateLabel": "Friday, 05.06.2026",
+      "mainNumbers": [
+        21,
+        23,
+        44,
+        47,
+        50
+      ],
+      "euroNumbers": [
+        1,
+        7
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "02.06.2026",
+      "dateLabel": "Tuesday, 02.06.2026",
+      "mainNumbers": [
+        2,
+        36,
+        38,
+        40,
+        46
+      ],
+      "euroNumbers": [
+        7,
+        8
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "29.05.2026",
+      "dateLabel": "Friday, 29.05.2026",
+      "mainNumbers": [
+        3,
+        20,
+        21,
+        42,
+        49
+      ],
+      "euroNumbers": [
+        5,
+        6
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "26.05.2026",
+      "dateLabel": "Tuesday, 26.05.2026",
+      "mainNumbers": [
+        5,
+        11,
+        23,
+        33,
+        42
+      ],
+      "euroNumbers": [
+        10,
+        12
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "22.05.2026",
+      "dateLabel": "Friday, 22.05.2026",
+      "mainNumbers": [
+        5,
+        34,
+        35,
+        42,
+        46
+      ],
+      "euroNumbers": [
+        3,
+        5
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "19.05.2026",
+      "dateLabel": "Tuesday, 19.05.2026",
+      "mainNumbers": [
+        10,
+        36,
+        37,
+        39,
+        47
+      ],
+      "euroNumbers": [
+        5,
+        6
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "15.05.2026",
+      "dateLabel": "Friday, 15.05.2026",
+      "mainNumbers": [
+        1,
+        32,
+        33,
+        36,
+        37
+      ],
+      "euroNumbers": [
+        7,
+        12
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "12.05.2026",
+      "dateLabel": "Tuesday, 12.05.2026",
+      "mainNumbers": [
+        7,
+        15,
+        19,
+        28,
+        35
+      ],
+      "euroNumbers": [
+        3,
+        11
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "08.05.2026",
+      "dateLabel": "Friday, 08.05.2026",
+      "mainNumbers": [
+        3,
+        17,
+        18,
+        31,
+        41
+      ],
+      "euroNumbers": [
+        6,
+        12
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "05.05.2026",
+      "dateLabel": "Tuesday, 05.05.2026",
+      "mainNumbers": [
+        1,
+        30,
+        33,
+        34,
+        43
+      ],
+      "euroNumbers": [
+        5,
+        10
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "01.05.2026",
+      "dateLabel": "Friday, 01.05.2026",
+      "mainNumbers": [
+        10,
+        11,
+        13,
+        16,
+        27
+      ],
+      "euroNumbers": [
+        5,
+        7
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "28.04.2026",
+      "dateLabel": "Tuesday, 28.04.2026",
+      "mainNumbers": [
+        19,
+        20,
+        41,
+        43,
+        46
+      ],
+      "euroNumbers": [
+        5,
+        7
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "24.04.2026",
+      "dateLabel": "Friday, 24.04.2026",
+      "mainNumbers": [
+        6,
+        21,
+        29,
+        39,
+        44
+      ],
+      "euroNumbers": [
+        1,
+        5
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "21.04.2026",
+      "dateLabel": "Tuesday, 21.04.2026",
+      "mainNumbers": [
+        31,
+        32,
+        36,
+        39,
+        47
+      ],
+      "euroNumbers": [
+        7,
+        8
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "17.04.2026",
+      "dateLabel": "Friday, 17.04.2026",
+      "mainNumbers": [
+        16,
+        31,
+        35,
+        43,
+        44
+      ],
+      "euroNumbers": [
+        2,
+        9
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "14.04.2026",
+      "dateLabel": "Tuesday, 14.04.2026",
+      "mainNumbers": [
+        13,
+        22,
+        32,
+        46,
+        47
+      ],
+      "euroNumbers": [
+        6,
+        7
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "10.04.2026",
+      "dateLabel": "Friday, 10.04.2026",
+      "mainNumbers": [
+        1,
+        6,
+        11,
+        18,
+        48
+      ],
+      "euroNumbers": [
+        10,
+        12
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "07.04.2026",
+      "dateLabel": "Tuesday, 07.04.2026",
+      "mainNumbers": [
+        2,
+        4,
+        16,
+        23,
+        27
+      ],
+      "euroNumbers": [
+        5,
+        8
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "03.04.2026",
+      "dateLabel": "Friday, 03.04.2026",
+      "mainNumbers": [
+        9,
+        10,
+        18,
+        22,
+        37
+      ],
+      "euroNumbers": [
+        1,
+        11
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "31.03.2026",
+      "dateLabel": "Tuesday, 31.03.2026",
+      "mainNumbers": [
+        5,
+        15,
+        18,
+        20,
+        35
+      ],
+      "euroNumbers": [
+        7,
+        8
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "27.03.2026",
+      "dateLabel": "Friday, 27.03.2026",
+      "mainNumbers": [
+        21,
+        23,
+        25,
+        38,
+        40
+      ],
+      "euroNumbers": [
+        7,
+        11
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "24.03.2026",
+      "dateLabel": "Tuesday, 24.03.2026",
+      "mainNumbers": [
+        9,
+        15,
+        23,
+        43,
+        48
+      ],
+      "euroNumbers": [
+        3,
+        5
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "20.03.2026",
+      "dateLabel": "Friday, 20.03.2026",
+      "mainNumbers": [
+        2,
+        17,
+        21,
+        25,
+        30
+      ],
+      "euroNumbers": [
+        2,
+        6
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "17.03.2026",
+      "dateLabel": "Tuesday, 17.03.2026",
+      "mainNumbers": [
+        12,
+        13,
+        16,
+        17,
+        37
+      ],
+      "euroNumbers": [
+        4,
+        11
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "13.03.2026",
+      "dateLabel": "Friday, 13.03.2026",
+      "mainNumbers": [
+        7,
+        23,
+        37,
+        44,
+        47
+      ],
+      "euroNumbers": [
+        2,
+        6
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "10.03.2026",
+      "dateLabel": "Tuesday, 10.03.2026",
+      "mainNumbers": [
+        2,
+        3,
+        17,
+        18,
+        28
+      ],
+      "euroNumbers": [
+        4,
+        10
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "06.03.2026",
+      "dateLabel": "Friday, 06.03.2026",
+      "mainNumbers": [
+        8,
+        17,
+        26,
+        31,
+        47
+      ],
+      "euroNumbers": [
+        1,
+        6
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "03.03.2026",
+      "dateLabel": "Tuesday, 03.03.2026",
+      "mainNumbers": [
+        1,
+        9,
+        14,
+        35,
+        49
+      ],
+      "euroNumbers": [
+        2,
+        10
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "27.02.2026",
+      "dateLabel": "Friday, 27.02.2026",
+      "mainNumbers": [
+        7,
+        17,
+        19,
+        28,
+        47
+      ],
+      "euroNumbers": [
+        2,
+        7
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "24.02.2026",
+      "dateLabel": "Tuesday, 24.02.2026",
+      "mainNumbers": [
+        4,
+        5,
+        26,
+        38,
+        48
+      ],
+      "euroNumbers": [
+        2,
+        9
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "20.02.2026",
+      "dateLabel": "Friday, 20.02.2026",
+      "mainNumbers": [
+        11,
+        17,
+        23,
+        36,
+        40
+      ],
+      "euroNumbers": [
+        5,
         6
       ]
     }
