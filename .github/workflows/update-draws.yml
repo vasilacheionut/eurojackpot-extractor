@@ -26,7 +26,7 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Capture network API responses and page state
+      - name: Inspect rendered DOM like Inspect Element
         run: |
           node -e '
           const fs = require("fs");
@@ -38,11 +38,10 @@ jobs:
               source: url,
               updatedAt: new Date().toISOString(),
               fetchedOk: false,
-              pageTitle: null,
               error: null,
-              networkJsonUrls: [],
-              networkSnippets: [],
-              bodyTextPreview: null,
+              pageTitle: null,
+              visibleText: null,
+              renderedHtmlPreview: null,
               draws: []
             };
 
@@ -59,52 +58,43 @@ jobs:
               });
               const page = await context.newPage();
 
-              page.on("response", async (response) => {
-                try {
-                  const resUrl = response.url();
-                  const ct = response.headers()["content-type"] || "";
-                  if (ct.includes("json") || /api|draw|ziehung|zahlen|quoten|eurojackpot/i.test(resUrl)) {
-                    if (!/\.(js|css|svg|png|jpg|woff2?|ttf)(\?|$)/i.test(resUrl)) {
-                      output.networkJsonUrls.push({
-                        status: response.status(),
-                        url: resUrl
-                      });
-                      if (ct.includes("json") && response.status() === 200) {
-                        const txt = await response.text();
-                        output.networkSnippets.push({
-                          url: resUrl,
-                          preview: txt.slice(0, 400)
-                        });
-                      }
-                    }
-                  }
-                } catch (_) {}
-              });
-
               await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
-              await page.waitForTimeout(8000);
+              await page.waitForTimeout(6000);
+
+              // Incercam sa inchidem eventuale bannere de cookies daca apar
+              const cookieButtons = [
+                "button:has-text(\"Akzeptieren\")",
+                "button:has-text(\"Alle akzeptieren\")",
+                "button:has-text(\"Accept\")",
+                "button:has-text(\"Agree\")"
+              ];
+              for (const sel of cookieButtons) {
+                const btn = page.locator(sel).first();
+                if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
+                  await btn.click().catch(() => {});
+                  await page.waitForTimeout(2000);
+                  break;
+                }
+              }
+
+              await page.waitForTimeout(4000);
 
               output.pageTitle = await page.title();
-              const pageInfo = await page.evaluate(() => {
-                const bodyText = document.body ? document.body.innerText.replace(/\s+/g, " ").trim() : "";
-                const numbers = Array.from(document.querySelectorAll(".winning-number"))
-                  .map((el) => Number(el.textContent.trim()))
-                  .filter((n) => Number.isInteger(n) && n > 0);
+
+              const domData = await page.evaluate(() => {
+                const text = document.body ? document.body.innerText.replace(/\s+/g, " ").trim() : "";
+                const html = document.querySelector("app-winning-numbers")
+                  ? document.querySelector("app-winning-numbers").outerHTML
+                  : (document.body ? document.body.innerHTML : "");
                 return {
-                  bodyText: bodyText.slice(0, 600),
-                  numbers
+                  text,
+                  html
                 };
               });
 
-              output.bodyTextPreview = pageInfo.bodyText;
+              output.visibleText = domData.text.slice(0, 1500);
+              output.renderedHtmlPreview = domData.html.slice(0, 1500);
               output.fetchedOk = true;
-
-              if (pageInfo.numbers.length >= 7) {
-                output.draws.push({
-                  mainNumbers: pageInfo.numbers.slice(0, 5),
-                  euroNumbers: pageInfo.numbers.slice(5, 7)
-                });
-              }
             } catch (err) {
               output.error = err.message;
             } finally {
