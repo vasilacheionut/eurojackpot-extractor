@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       years_range:
-        description: "Optional years (e.g. 2023-2019, 2017-2012, 2026). Leave empty for all years."
+        description: "Optional years (e.g. 2023-2019, 2026). Leave empty: full history on 1st run, current year after."
         required: false
         default: ""
 
@@ -32,7 +32,7 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Fetch complete Eurojackpot draws
+      - name: Fetch Eurojackpot draws
         env:
           YEARS_RANGE: ${{ inputs.years_range }}
         run: |
@@ -52,9 +52,19 @@ jobs:
             return Number(`${m[3]}${m[2]}${m[1]}`);
           }
 
-          function parseRequestedYears(rangeStr, availableYears) {
+          function parseRequestedYears(rangeStr, availableYears, hasExistingDraws) {
             const raw = String(rangeStr || "").trim();
-            if (!raw) return availableYears;
+
+            if (!raw) {
+              if (!hasExistingDraws) {
+                console.log("No existing draws found -> running full historical fetch.");
+                return availableYears;
+              }
+              const currentYear = String(new Date().getFullYear());
+              console.log(`Existing draws found -> updating current year (${currentYear}).`);
+              const matched = availableYears.filter((y) => y.label === currentYear || y.value === currentYear);
+              return matched.length > 0 ? matched : [{ label: currentYear, value: currentYear }];
+            }
 
             const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
             const set = new Set();
@@ -75,7 +85,9 @@ jobs:
             }
 
             const filtered = availableYears.filter((y) => set.has(y.label) || set.has(y.value));
-            return filtered.length > 0 ? filtered : Array.from(set).sort((a, b) => Number(b) - Number(a)).map((y) => ({ label: y, value: y }));
+            return filtered.length > 0
+              ? filtered
+              : Array.from(set).sort((a, b) => Number(b) - Number(a)).map((y) => ({ label: y, value: y }));
           }
 
           async function selectYearOption(page, yearOpt) {
@@ -222,6 +234,7 @@ jobs:
               console.error("Warning reading existing draws.json:", e.message);
             }
 
+            const hasExistingDraws = collectedMap.size > 0;
             console.log("Initial draws loaded:", collectedMap.size);
 
             let browser;
@@ -265,14 +278,12 @@ jobs:
                   .filter((o) => /^\d{4}$/.test(o.label) || /^\d{4}$/.test(o.value))
               );
 
-              console.log("Available year options on site:", yearOptions.map((o) => `${o.label}(${o.value})`).join(", "));
-
               const fallbackList = Array.from({ length: 15 }, (_, i) => ({
                 label: String(2026 - i),
                 value: String(2026 - i)
               }));
               const baseYears = yearOptions.length > 0 ? yearOptions : fallbackList;
-              const yearsToProcess = parseRequestedYears(process.env.YEARS_RANGE, baseYears);
+              const yearsToProcess = parseRequestedYears(process.env.YEARS_RANGE, baseYears, hasExistingDraws);
               console.log("Years to process:", yearsToProcess.map((y) => y.label || y.value).join(", "));
 
               for (const yrOpt of yearsToProcess) {
