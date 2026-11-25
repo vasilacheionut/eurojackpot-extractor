@@ -26,7 +26,7 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Fetch Eurojackpot draws and inspect historical navigation controls
+      - name: Fetch Eurojackpot draws from 2026 down to 2012
         run: |
           node -e '
           const fs = require("fs");
@@ -44,71 +44,88 @@ jobs:
             return Number(`${m[3]}${m[2]}${m[1]}`);
           }
 
-          function buildYearsAndDates(drawsList) {
-            const yearSet = new Set();
-            const mapByYear = new Map();
+          async function setSelectValue(page, selector, value) {
+            await page.locator(selector).selectOption(value);
+            await page.locator(selector).evaluate((el, val) => {
+              el.value = val;
+              el.dispatchEvent(new Event("input", { bubbles: true }));
+              el.dispatchEvent(new Event("change", { bubbles: true }));
+            }, value);
+          }
 
-            for (const d of drawsList) {
-              const y = inferYear(d.date || d.dateLabel, d.year);
-              if (!y) continue;
-              yearSet.add(y);
-              const yKey = String(y);
-              if (!mapByYear.has(yKey)) {
-                mapByYear.set(yKey, new Map());
+          async function readCurrentDraw(page, fallbackYear) {
+            return page.evaluate((fbYear) => {
+              const host = document.querySelector("app-winning-numbers") || document.body;
+              const winningEls = Array.from(host.querySelectorAll(".winning-number"));
+              const nums = winningEls
+                .map((el) => Number((el.textContent || "").trim()))
+                .filter((n) => !Number.isNaN(n));
+
+              const datumSelect = document.querySelector("select[formcontrolname=\"datum\"]");
+              let dateStr = null;
+
+              if (datumSelect && datumSelect.selectedOptions && datumSelect.selectedOptions[0]) {
+                const txt = (datumSelect.selectedOptions[0].textContent || "").trim();
+                const m = txt.match(/\b(\d{2}\.\d{2}\.\d{4})\b/);
+                if (m) dateStr = m[1];
               }
-              const dateKey = d.date || d.dateLabel;
-              if (dateKey && !mapByYear.get(yKey).has(dateKey)) {
-                mapByYear.get(yKey).set(dateKey, {
-                  date: d.date || null,
-                  dateLabel: d.dateLabel || d.date
-                });
+
+              if (!dateStr) {
+                const allText = (host.innerText || "").replace(/\s+/g, " ");
+                const matches = allText.match(/\b\d{2}\.\d{2}\.20\d{2}\b/g) || [];
+                if (matches.length > 0) dateStr = matches[0];
               }
-            }
 
-            const availableYears = Array.from(yearSet).sort((a, b) => b - a);
-            const datesByYear = {};
+              if (!dateStr && datumSelect && datumSelect.value) {
+                const isoMatch = String(datumSelect.value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                if (isoMatch) {
+                  dateStr = `${isoMatch[3]}.${isoMatch[2]}.${isoMatch[1]}`;
+                }
+              }
 
-            for (const y of availableYears) {
-              const yKey = String(y);
-              const entries = Array.from(mapByYear.get(yKey).values()).sort(
-                (a, b) => parseDMYToNum(b.date || b.dateLabel) - parseDMYToNum(a.date || a.dateLabel)
-              );
-              datesByYear[yKey] = entries;
-            }
+              const yearMatch = dateStr ? dateStr.match(/\.(\d{4})$/) : null;
+              const year = yearMatch ? Number(yearMatch[1]) : (fbYear ? Number(fbYear) : null);
 
-            return { availableYears, datesByYear };
+              return {
+                year,
+                date: dateStr,
+                mainNumbers: nums.slice(0, 5),
+                euroNumbers: nums.slice(5, 7)
+              };
+            }, fallbackYear);
           }
 
           async function run() {
             const url = "https://www.eurojackpot.com/";
+            const collectedMap = new Map();
 
-            let prevJson = {};
-            let existingDraws = [];
+            function addDraw(d) {
+              if (!d || !Array.isArray(d.mainNumbers) || d.mainNumbers.length !== 5) return false;
+              if (!Array.isArray(d.euroNumbers) || d.euroNumbers.length !== 2) return false;
+              if (!d.date) return false;
+              const year = inferYear(d.date, d.year);
+              if (!year) return false;
+              collectedMap.set(d.date, {
+                year,
+                date: d.date,
+                mainNumbers: d.mainNumbers,
+                euroNumbers: d.euroNumbers
+              });
+              return true;
+            }
+
             try {
               if (fs.existsSync("draws.json")) {
-                prevJson = JSON.parse(fs.readFileSync("draws.json", "utf8"));
-                if (Array.isArray(prevJson.draws)) {
-                  existingDraws = prevJson.draws;
+                const prev = JSON.parse(fs.readFileSync("draws.json", "utf8"));
+                if (Array.isArray(prev.draws)) {
+                  for (const item of prev.draws) {
+                    addDraw(item);
+                  }
                 }
               }
             } catch (_) {}
 
-            const output = {
-              source: url,
-              updatedAt: new Date().toISOString(),
-              fetchedOk: false,
-              error: null,
-              nextDrawDate: prevJson.nextDrawDate || null,
-              latestDrawDate: prevJson.latestDrawDate || null,
-              availableYears: [],
-              datesByYear: {},
-              debugControlsInfo: null,
-              totalDraws: 0,
-              draws: []
-            };
-
             let browser;
-
             try {
               browser = await chromium.launch({
                 headless: true,
@@ -139,131 +156,43 @@ jobs:
                 }
               }
 
-              await page.waitForTimeout(1500);
-
-              const controlsInfo = await page.evaluate(() => {
-                const host = document.querySelector("app-winning-numbers") || document;
-                const selects = Array.from(document.querySelectorAll("select")).map((s, i) => ({
-                  idx: i,
-                  id: s.id || null,
-                  formControlName: s.getAttribute("formcontrolname") || null,
-                  optionsCount: s.options ? s.options.length : 0,
-                  options: s.options ? Array.from(s.options).slice(0, 15).map((o) => ({ value: o.value, text: (o.textContent || "").trim() })) : []
-                }));
-
-                const buttons = Array.from(host.querySelectorAll("button, [role=\"button\"], a")).map((el, i) => ({
-                  idx: i,
-                  tag: el.tagName.toLowerCase(),
-                  text: (el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 60),
-                  ariaLabel: el.getAttribute("aria-label") || null,
-                  className: (el.className || "").toString().slice(0, 80)
-                })).filter((b) => b.text || b.ariaLabel);
-
-                const inputs = Array.from(host.querySelectorAll("input, [formcontrolname]")).map((el, i) => ({
-                  idx: i,
-                  tag: el.tagName.toLowerCase(),
-                  type: el.getAttribute("type") || null,
-                  formControlName: el.getAttribute("formcontrolname") || null,
-                  value: el.value || null,
-                  className: (el.className || "").toString().slice(0, 80)
-                }));
-
-                return {
-                  selects,
-                  buttons: buttons.slice(0, 30),
-                  inputs: inputs.slice(0, 20)
-                };
-              });
-
-              output.debugControlsInfo = controlsInfo;
-
-              const pageInfo = await page.evaluate(() => {
-                const host = document.querySelector("app-winning-numbers") || document.body;
-                const nextDateEl = host.querySelector(".next-win-date");
-                const nextDrawDate = nextDateEl ? nextDateEl.textContent.replace(/\s+/g, " ").trim() : "";
-
-                const winningEls = Array.from(host.querySelectorAll(".winning-number"));
-                const nums = winningEls
-                  .map((el) => Number((el.textContent || "").trim()))
-                  .filter((n) => !Number.isNaN(n));
-
-                const allText = (host.innerText || "").replace(/\s+/g, " ");
-                const dateMatches = allText.match(/\b\d{2}\.\d{2}\.20\d{2}\b/g) || [];
-
-                return {
-                  nextDrawDate,
-                  mainNumbers: nums.slice(0, 5),
-                  euroNumbers: nums.slice(5, 7),
-                  datesFoundInText: Array.from(new Set(dateMatches))
-                };
-              });
-
-              output.fetchedOk = true;
-              if (pageInfo.nextDrawDate) output.nextDrawDate = pageInfo.nextDrawDate;
-              if (pageInfo.datesFoundInText && pageInfo.datesFoundInText[0]) {
-                output.latestDrawDate = pageInfo.datesFoundInText[0];
-              }
-
-              const collectedMap = new Map();
-              function addDraw(d) {
-                if (!d || !Array.isArray(d.mainNumbers) || d.mainNumbers.length !== 5) return false;
-                if (!Array.isArray(d.euroNumbers) || d.euroNumbers.length !== 2) return false;
-                const key = d.date || d.dateLabel;
-                if (!key) return false;
-                const normalizedYear = inferYear(d.date || d.dateLabel, d.year);
-                if (collectedMap.has(key)) {
-                  const existing = collectedMap.get(key);
-                  if (existing.year !== normalizedYear && normalizedYear) {
-                    collectedMap.set(key, { ...existing, year: normalizedYear });
-                  }
-                  return false;
-                }
-                collectedMap.set(key, {
-                  year: normalizedYear,
-                  date: d.date,
-                  dateLabel: d.dateLabel || d.date,
-                  mainNumbers: d.mainNumbers,
-                  euroNumbers: d.euroNumbers
-                });
-                return true;
-              }
-
-              for (const oldDraw of existingDraws) {
-                addDraw(oldDraw);
-              }
-
-              if (pageInfo.mainNumbers.length === 5 && pageInfo.euroNumbers.length === 2 && pageInfo.datesFoundInText[0]) {
-                const dStr = pageInfo.datesFoundInText[0];
-                addDraw({
-                  year: inferYear(dStr, 2026),
-                  date: dStr,
-                  dateLabel: dStr,
-                  mainNumbers: pageInfo.mainNumbers,
-                  euroNumbers: pageInfo.euroNumbers
-                });
-              }
-
-              const allDraws = Array.from(collectedMap.values()).sort(
-                (a, b) => parseDMYToNum(b.date) - parseDMYToNum(a.date)
+              const yearOptions = await page.locator("select[formcontrolname=\"jahr\"] option").evaluateAll((opts) =>
+                opts
+                  .map((o) => ({ value: (o.value || "").trim(), text: (o.textContent || "").trim() }))
+                  .filter((o) => /^\d{4}$/.test(o.value || o.text))
+                  .map((o) => o.value || o.text)
               );
 
-              const built = buildYearsAndDates(allDraws);
-              output.availableYears = built.availableYears;
-              output.datesByYear = built.datesByYear;
-              output.draws = allDraws;
-              output.totalDraws = allDraws.length;
-              if (!output.latestDrawDate && allDraws.length > 0) {
-                output.latestDrawDate = allDraws[0].dateLabel || allDraws[0].date;
+              const yearsToProcess = yearOptions.length > 0 ? yearOptions : Array.from({ length: 15 }, (_, i) => String(2026 - i));
+
+              for (const yr of yearsToProcess) {
+                await setSelectValue(page, "select[formcontrolname=\"jahr\"]", yr);
+                await page.waitForTimeout(700);
+
+                const dateValues = await page.locator("select[formcontrolname=\"datum\"] option").evaluateAll((opts) =>
+                  opts
+                    .map((o) => (o.value || "").trim())
+                    .filter((v) => v.length > 0)
+                );
+
+                for (const dVal of dateValues) {
+                  await setSelectValue(page, "select[formcontrolname=\"datum\"]", dVal);
+                  await page.waitForTimeout(250);
+                  const draw = await readCurrentDraw(page, Number(yr));
+                  addDraw(draw);
+                }
               }
-            } catch (err) {
-              output.error = err.message;
             } finally {
               if (browser) {
                 await browser.close();
               }
             }
 
-            fs.writeFileSync("draws.json", JSON.stringify(output, null, 2), "utf8");
+            const draws = Array.from(collectedMap.values()).sort(
+              (a, b) => parseDMYToNum(b.date) - parseDMYToNum(a.date)
+            );
+
+            fs.writeFileSync("draws.json", JSON.stringify({ draws }, null, 2), "utf8");
           }
 
           run();
