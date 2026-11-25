@@ -26,7 +26,7 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Inspect dropdown controls and catalog years/dates
+      - name: Fetch Eurojackpot years, dates and draws
         run: |
           node -e '
           const fs = require("fs");
@@ -69,7 +69,7 @@ jobs:
               latestDrawDate: prevJson.latestDrawDate || null,
               availableYears: [],
               datesByYear: {},
-              debugControls: [],
+              debugControls: null,
               totalDraws: 0,
               draws: []
             };
@@ -87,8 +87,8 @@ jobs:
               });
               const page = await context.newPage();
 
-              await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
-              await page.waitForTimeout(6000);
+              await page.goto(url, { waitUntil: "networkidle", timeout: 45000 }).catch(() => {});
+              await page.waitForTimeout(3000);
 
               const cookieButtons = [
                 "button:has-text(\"Accept\")",
@@ -105,7 +105,12 @@ jobs:
                 }
               }
 
-              await page.waitForTimeout(2000);
+              // Așteptăm popularea opțiunilor din select[formcontrolname="jahr"] și select[formcontrolname="datum"]
+              await page.waitForFunction(() => {
+                const ySel = document.querySelector("select[formcontrolname=\"jahr\"]");
+                const dSel = document.querySelector("select[formcontrolname=\"datum\"]");
+                return Boolean(ySel && ySel.options && ySel.options.length > 0 && dSel && dSel.options && dSel.options.length > 0);
+              }, { timeout: 25000 }).catch(() => {});
 
               async function readPageState() {
                 return await page.evaluate(() => {
@@ -114,39 +119,8 @@ jobs:
                   const nextDateEl = host.querySelector(".next-win-date");
                   const nextDrawDate = nextDateEl ? nextDateEl.textContent.replace(/\s+/g, " ").trim() : "";
 
-                  const allSelects = Array.from(document.querySelectorAll("select")).map((s, idx) => ({
-                    idx,
-                    tag: s.tagName,
-                    id: s.id || null,
-                    name: s.getAttribute("name"),
-                    formControlName: s.getAttribute("formcontrolname"),
-                    ariaLabel: s.getAttribute("aria-label"),
-                    className: s.className || "",
-                    options: Array.from(s.options).map((o, oIdx) => ({
-                      index: oIdx,
-                      value: o.value,
-                      text: (o.text || "").trim()
-                    }))
-                  }));
-
-                  const roleComboboxes = Array.from(document.querySelectorAll("[role=\"combobox\"], [role=\"listbox\"], button[aria-haspopup]")).map((el, idx) => ({
-                    idx,
-                    tag: el.tagName,
-                    role: el.getAttribute("role"),
-                    ariaLabel: el.getAttribute("aria-label"),
-                    text: (el.innerText || el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 120)
-                  }));
-
-                  let yearSelectEl = null;
-                  let dateSelectEl = null;
-
-                  for (const s of Array.from(document.querySelectorAll("select"))) {
-                    const opts = Array.from(s.options).map((o) => (o.text || "").trim());
-                    const hasYears = opts.some((t) => /^20(1[2-9]|2[0-6])$/.test(t));
-                    const hasDates = opts.some((t) => /\b\d{2}\.\d{2}\.20(1[2-9]|2[0-6])\b/.test(t));
-                    if (hasYears && !yearSelectEl) yearSelectEl = s;
-                    if (hasDates && !dateSelectEl) dateSelectEl = s;
-                  }
+                  const yearSelectEl = host.querySelector("select[formcontrolname=\"jahr\"]") || document.querySelector("select[formcontrolname=\"jahr\"]");
+                  const dateSelectEl = host.querySelector("select[formcontrolname=\"datum\"]") || document.querySelector("select[formcontrolname=\"datum\"]");
 
                   const selectedYear = yearSelectEl && yearSelectEl.selectedOptions[0]
                     ? yearSelectEl.selectedOptions[0].text.trim()
@@ -156,7 +130,7 @@ jobs:
                     ? Array.from(yearSelectEl.options).map((o, idx) => ({
                         index: idx,
                         value: o.value,
-                        label: o.text.trim()
+                        label: (o.text || "").trim()
                       }))
                     : [];
 
@@ -168,63 +142,65 @@ jobs:
                     ? Array.from(dateSelectEl.options).map((o, idx) => ({
                         index: idx,
                         value: o.value,
-                        label: o.text.trim()
+                        label: (o.text || "").trim()
                       }))
                     : [];
 
-                  const dateRect = dateSelectEl ? dateSelectEl.getBoundingClientRect() : { bottom: 0 };
-                  const allEls = Array.from(host.querySelectorAll("*"));
+                  const winningEls = Array.from(host.querySelectorAll(".winning-number"));
+                  let mainNumbers = [];
+                  let euroNumbers = [];
 
-                  let lowerBoundTop = Infinity;
-                  for (const el of allEls) {
-                    const t = (el.textContent || "").trim();
-                    if (/^(Show video|Prize breakdown)$/i.test(t) && el.children.length === 0) {
-                      const r = el.getBoundingClientRect();
-                      if (r.top > dateRect.bottom && r.top < lowerBoundTop) {
-                        lowerBoundTop = r.top;
+                  if (winningEls.length >= 7) {
+                    const nums = winningEls
+                      .map((el) => Number((el.textContent || "").trim()))
+                      .filter((n) => !Number.isNaN(n));
+                    mainNumbers = nums.slice(0, 5);
+                    euroNumbers = nums.slice(5, 7);
+                  } else {
+                    const dateRect = dateSelectEl ? dateSelectEl.getBoundingClientRect() : { bottom: 0 };
+                    const allEls = Array.from(host.querySelectorAll("*"));
+                    let lowerBoundTop = Infinity;
+                    for (const el of allEls) {
+                      const t = (el.textContent || "").trim();
+                      if (/^(Show video|Prize breakdown|Video ansehen|Gewinnquoten)$/i.test(t) && el.children.length === 0) {
+                        const r = el.getBoundingClientRect();
+                        if (r.top > dateRect.bottom && r.top < lowerBoundTop) {
+                          lowerBoundTop = r.top;
+                        }
                       }
                     }
-                  }
 
-                  const balls = [];
-                  for (const el of allEls) {
-                    if (el.children.length > 0) continue;
-                    if (el.closest("select") || el.closest("table")) continue;
-
-                    const style = window.getComputedStyle(el);
-                    if (style.display === "none" || style.visibility === "hidden") continue;
-
-                    const txt = (el.textContent || "").trim();
-                    if (/^([1-9]|[1-4][0-9]|50)$/.test(txt)) {
-                      const rect = el.getBoundingClientRect();
-                      if (
-                        rect.top > dateRect.bottom - 5 &&
-                        rect.top < lowerBoundTop &&
-                        rect.width >= 16 &&
-                        rect.height >= 16
-                      ) {
-                        balls.push({
-                          value: Number(txt),
-                          top: Math.round(rect.top),
-                          left: Math.round(rect.left)
-                        });
+                    const balls = [];
+                    for (const el of allEls) {
+                      if (el.children.length > 0) continue;
+                      if (el.closest("select") || el.closest("table")) continue;
+                      const style = window.getComputedStyle(el);
+                      if (style.display === "none" || style.visibility === "hidden") continue;
+                      const txt = (el.textContent || "").trim();
+                      if (/^([1-9]|[1-4][0-9]|50)$/.test(txt)) {
+                        const rect = el.getBoundingClientRect();
+                        if (rect.top > dateRect.bottom - 5 && rect.top < lowerBoundTop && rect.width >= 16 && rect.height >= 16) {
+                          balls.push({
+                            value: Number(txt),
+                            top: Math.round(rect.top),
+                            left: Math.round(rect.left)
+                          });
+                        }
                       }
                     }
+
+                    balls.sort((a, b) => (Math.abs(a.top - b.top) <= 14 ? a.left - b.left : a.top - b.top));
+                    const uniqueBalls = [];
+                    for (const b of balls) {
+                      const isDup = uniqueBalls.some(
+                        (u) => u.value === b.value && Math.abs(u.top - b.top) <= 5 && Math.abs(u.left - b.left) <= 5
+                      );
+                      if (!isDup) uniqueBalls.push(b);
+                    }
+                    const values = uniqueBalls.map((x) => x.value);
+                    mainNumbers = values.slice(0, 5);
+                    euroNumbers = values.slice(5, 7).filter((n) => n >= 1 && n <= 12);
                   }
-
-                  balls.sort((a, b) => (Math.abs(a.top - b.top) <= 14 ? a.left - b.left : a.top - b.top));
-
-                  const uniqueBalls = [];
-                  for (const b of balls) {
-                    const isDup = uniqueBalls.some(
-                      (u) => u.value === b.value && Math.abs(u.top - b.top) <= 5 && Math.abs(u.left - b.left) <= 5
-                    );
-                    if (!isDup) uniqueBalls.push(b);
-                  }
-
-                  const values = uniqueBalls.map((x) => x.value);
-                  const mainNumbers = values.slice(0, 5);
-                  const euroNumbers = values.slice(5, 7).filter((n) => n >= 1 && n <= 12);
 
                   const shortMatch = selectedDateLabel ? selectedDateLabel.match(/\b(\d{2}\.\d{2}\.\d{4})\b/) : null;
                   const drawDate = shortMatch ? shortMatch[1] : selectedDateLabel;
@@ -239,20 +215,36 @@ jobs:
                     mainNumbers,
                     euroNumbers,
                     debugControls: {
-                      selectCount: allSelects.length,
-                      selects: allSelects.map((s) => ({
-                        idx: s.idx,
-                        id: s.id,
-                        name: s.name,
-                        formControlName: s.formControlName,
-                        ariaLabel: s.ariaLabel,
-                        optionsCount: s.options.length,
-                        sampleOptions: s.options.slice(0, 5)
-                      })),
-                      roleComboboxes
+                      hasYearSelect: Boolean(yearSelectEl),
+                      yearOptionsCount: yearOptions.length,
+                      selectedYear,
+                      hasDateSelect: Boolean(dateSelectEl),
+                      dateOptionsCount: dateOptions.length,
+                      selectedDateLabel
                     }
                   };
                 });
+              }
+
+              async function selectYearIndex(index, expectedYearLabel, expectedYearNum) {
+                const yLoc = page.locator("select[formcontrolname=\"jahr\"]").first();
+                await yLoc.selectOption({ index }).catch(() => {});
+                await yLoc.dispatchEvent("change").catch(() => {});
+                await yLoc.dispatchEvent("input").catch(() => {});
+
+                for (let step = 0; step < 30; step++) {
+                  await page.waitForTimeout(250);
+                  const chk = await readPageState();
+                  const firstLabel = chk.dateOptions && chk.dateOptions[0] ? chk.dateOptions[0].label : "";
+                  if (
+                    chk.selectedYear === expectedYearLabel &&
+                    chk.dateOptions.length > 0 &&
+                    firstLabel.includes(String(expectedYearNum))
+                  ) {
+                    break;
+                  }
+                }
+                await page.waitForTimeout(400);
               }
 
               const initial = await readPageState();
@@ -262,31 +254,25 @@ jobs:
               if (initial.selectedDateLabel) output.latestDrawDate = initial.selectedDateLabel;
 
               const yearEntries = (initial.yearOptions || [])
-                .map((y) => ({ ...y, yearNum: Number(y.label.trim()) }))
+                .map((y) => {
+                  const m = (y.label || y.value || "").match(/\b(20\d{2})\b/);
+                  return {
+                    ...y,
+                    yearNum: m ? Number(m[1]) : NaN
+                  };
+                })
                 .filter((y) => !Number.isNaN(y.yearNum) && y.yearNum >= 2012 && y.yearNum <= 2026)
                 .sort((a, b) => b.yearNum - a.yearNum);
 
               output.availableYears = yearEntries.map((y) => y.yearNum);
 
               const datesByYear = {};
-              const yearSelectLocator = page.locator("select").filter({ hasText: /2026|2025|2024/ }).first();
-              const hasYearSelect = await yearSelectLocator.count().then((c) => c > 0);
-
               for (const yEntry of yearEntries) {
                 const yKey = String(yEntry.yearNum);
-                if (hasYearSelect && (await readPageState()).selectedYear !== yEntry.label.trim()) {
-                  await yearSelectLocator.selectOption({ index: yEntry.index }).catch(() => {});
-                  for (let step = 0; step < 25; step++) {
-                    await page.waitForTimeout(250);
-                    const check = await readPageState();
-                    const firstLabel = check.dateOptions && check.dateOptions[0] ? check.dateOptions[0].label : "";
-                    if (check.selectedYear === yEntry.label.trim() && firstLabel.includes(yKey)) {
-                      break;
-                    }
-                  }
-                  await page.waitForTimeout(400);
+                const cur = await readPageState();
+                if (cur.selectedYear !== yEntry.label) {
+                  await selectYearIndex(yEntry.index, yEntry.label, yEntry.yearNum);
                 }
-
                 const st = await readPageState();
                 datesByYear[yKey] = (st.dateOptions || []).map((opt) => ({
                   index: opt.index,
@@ -328,8 +314,7 @@ jobs:
               }
 
               let addedThisRun = 0;
-              const dateSelectLocator = page.locator("select").filter({ hasText: /\d{2}\.\d{2}\.\d{4}/ }).first();
-              const hasDateSelect = await dateSelectLocator.count().then((c) => c > 0);
+              const dLoc = page.locator("select[formcontrolname=\"datum\"]").first();
 
               for (const yEntry of yearEntries) {
                 if (addedThisRun >= MAX_NEW_DRAWS_PER_RUN) break;
@@ -339,17 +324,9 @@ jobs:
                 const hasMissingInYear = optsForYear.some((o) => o.date && !collectedMap.has(o.date));
                 if (!hasMissingInYear) continue;
 
-                if (hasYearSelect && (await readPageState()).selectedYear !== yEntry.label.trim()) {
-                  await yearSelectLocator.selectOption({ index: yEntry.index }).catch(() => {});
-                  for (let step = 0; step < 25; step++) {
-                    await page.waitForTimeout(250);
-                    const check = await readPageState();
-                    const firstLabel = check.dateOptions && check.dateOptions[0] ? check.dateOptions[0].label : "";
-                    if (check.selectedYear === yEntry.label.trim() && firstLabel.includes(yKey)) {
-                      break;
-                    }
-                  }
-                  await page.waitForTimeout(500);
+                const cur = await readPageState();
+                if (cur.selectedYear !== yEntry.label) {
+                  await selectYearIndex(yEntry.index, yEntry.label, yEntry.yearNum);
                 }
 
                 const curState = await readPageState();
@@ -365,16 +342,16 @@ jobs:
                   }
                 }
 
-                if (!hasDateSelect) continue;
-
                 for (const opt of optsForYear) {
                   if (addedThisRun >= MAX_NEW_DRAWS_PER_RUN) break;
                   if (!opt.date || collectedMap.has(opt.date)) continue;
 
                   const prevSig = JSON.stringify((await readPageState()).mainNumbers);
-                  await dateSelectLocator.selectOption({ index: opt.index }).catch(() => {});
+                  await dLoc.selectOption({ index: opt.index }).catch(() => {});
+                  await dLoc.dispatchEvent("change").catch(() => {});
+                  await dLoc.dispatchEvent("input").catch(() => {});
 
-                  for (let step = 0; step < 12; step++) {
+                  for (let step = 0; step < 15; step++) {
                     await page.waitForTimeout(200);
                     const chk = await readPageState();
                     if (JSON.stringify(chk.mainNumbers) !== prevSig) {
