@@ -26,13 +26,25 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Extract Eurojackpot draws history incrementally up to 2012
+      - name: Catalog years (2012-2026) and dates per year, then extract draws
         run: |
           node -e '
           const fs = require("fs");
           const { chromium } = require("playwright");
 
-          const MAX_NEW_DRAWS_PER_RUN = 200;
+          const MAX_NEW_DRAWS_PER_RUN = 500;
+
+          function extractShortDate(label) {
+            if (!label) return null;
+            const m = String(label).match(/\b(\d{2}\.\d{2}\.\d{4})\b/);
+            return m ? m[1] : String(label).trim();
+          }
+
+          function inferYear(dateStr, fallbackYear) {
+            const m = String(dateStr || "").match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+            if (m) return Number(m[3]);
+            return fallbackYear ? Number(fallbackYear) : null;
+          }
 
           async function run() {
             const url = "https://www.eurojackpot.com/";
@@ -55,6 +67,8 @@ jobs:
               error: null,
               nextDrawDate: prevJson.nextDrawDate || null,
               latestDrawDate: prevJson.latestDrawDate || null,
+              availableYears: [],
+              datesByYear: {},
               totalDraws: 0,
               draws: []
             };
@@ -202,22 +216,61 @@ jobs:
               if (initial.nextDrawDate) output.nextDrawDate = initial.nextDrawDate;
               if (initial.selectedDateLabel) output.latestDrawDate = initial.selectedDateLabel;
 
-              const collectedMap = new Map();
+              // PASUL 1: Extragem lista anilor (2012..2026) si toate optiunile de data pentru fiecare an
+              const yearEntries = (initial.yearOptions || [])
+                .map((y) => ({ ...y, yearNum: Number(y.label.trim()) }))
+                .filter((y) => !Number.isNaN(y.yearNum) && y.yearNum >= 2012 && y.yearNum <= 2026)
+                .sort((a, b) => b.yearNum - a.yearNum);
 
-              function extractShortDate(label) {
-                if (!label) return null;
-                const m = String(label).match(/\b(\d{2}\.\d{2}\.\d{4})\b/);
-                return m ? m[1] : String(label).trim();
+              output.availableYears = yearEntries.map((y) => y.yearNum);
+
+              const datesByYear = {};
+              const hasYearSelect = await page.locator("select[formcontrolname=\"jahr\"]").count().then((c) => c > 0);
+
+              for (const yEntry of yearEntries) {
+                const yKey = String(yEntry.yearNum);
+                if (hasYearSelect && (await readPageState()).selectedYear !== yEntry.label.trim()) {
+                  await page.selectOption("select[formcontrolname=\"jahr\"]", { index: yEntry.index }).catch(() => {});
+                  for (let step = 0; step < 25; step++) {
+                    await page.waitForTimeout(250);
+                    const check = await readPageState();
+                    const firstLabel = check.dateOptions && check.dateOptions[0] ? check.dateOptions[0].label : "";
+                    if (check.selectedYear === yEntry.label.trim() && firstLabel.includes(yKey)) {
+                      break;
+                    }
+                  }
+                  await page.waitForTimeout(400);
+                }
+
+                const st = await readPageState();
+                datesByYear[yKey] = (st.dateOptions || []).map((opt) => ({
+                  index: opt.index,
+                  value: opt.value,
+                  label: opt.label,
+                  date: extractShortDate(opt.label)
+                }));
               }
+
+              output.datesByYear = datesByYear;
+
+              // PASUL 2: Parcurgem pe rand fiecare an si extragem extragerile lipsa
+              const collectedMap = new Map();
 
               function addDraw(d) {
                 if (!d || !Array.isArray(d.mainNumbers) || d.mainNumbers.length !== 5) return false;
                 if (!Array.isArray(d.euroNumbers) || d.euroNumbers.length !== 2) return false;
                 const key = d.date || d.dateLabel;
                 if (!key) return false;
-                if (collectedMap.has(key)) return false;
+                const normalizedYear = inferYear(d.date || d.dateLabel, d.year);
+                if (collectedMap.has(key)) {
+                  const existing = collectedMap.get(key);
+                  if (existing.year !== normalizedYear && normalizedYear) {
+                    collectedMap.set(key, { ...existing, year: normalizedYear });
+                  }
+                  return false;
+                }
                 collectedMap.set(key, {
-                  year: d.year || null,
+                  year: normalizedYear,
                   date: d.date,
                   dateLabel: d.dateLabel || d.date,
                   mainNumbers: d.mainNumbers,
@@ -231,81 +284,69 @@ jobs:
               }
 
               let addedThisRun = 0;
+              const hasDateSelect = await page.locator("select[formcontrolname=\"datum\"]").count().then((c) => c > 0);
 
-              async function collectCurrentYearDates() {
-                const state = await readPageState();
-                if (state.mainNumbers.length === 5 && state.euroNumbers.length === 2) {
-                  const wasAdded = addDraw({
-                    year: state.selectedYear ? Number(state.selectedYear) : null,
-                    date: state.drawDate,
-                    dateLabel: state.selectedDateLabel,
-                    mainNumbers: state.mainNumbers,
-                    euroNumbers: state.euroNumbers
-                  });
-                  if (wasAdded) addedThisRun++;
+              for (const yEntry of yearEntries) {
+                if (addedThisRun >= MAX_NEW_DRAWS_PER_RUN) break;
+
+                const yKey = String(yEntry.yearNum);
+                const optsForYear = datesByYear[yKey] || [];
+                const hasMissingInYear = optsForYear.some((o) => o.date && !collectedMap.has(o.date));
+                if (!hasMissingInYear) continue;
+
+                if (hasYearSelect && (await readPageState()).selectedYear !== yEntry.label.trim()) {
+                  await page.selectOption("select[formcontrolname=\"jahr\"]", { index: yEntry.index }).catch(() => {});
+                  for (let step = 0; step < 25; step++) {
+                    await page.waitForTimeout(250);
+                    const check = await readPageState();
+                    const firstLabel = check.dateOptions && check.dateOptions[0] ? check.dateOptions[0].label : "";
+                    if (check.selectedYear === yEntry.label.trim() && firstLabel.includes(yKey)) {
+                      break;
+                    }
+                  }
+                  await page.waitForTimeout(500);
                 }
 
-                const hasDateSelect = await page.locator("select[formcontrolname=\"datum\"]").count().then((c) => c > 0);
-                if (!hasDateSelect || !Array.isArray(state.dateOptions)) return;
-
-                for (let i = 1; i < state.dateOptions.length; i++) {
-                  if (addedThisRun >= MAX_NEW_DRAWS_PER_RUN) break;
-
-                  const opt = state.dateOptions[i];
-                  const candidateKey = extractShortDate(opt.label);
-                  if (candidateKey && collectedMap.has(candidateKey)) {
-                    continue;
+                const curState = await readPageState();
+                if (curState.drawDate && !collectedMap.has(curState.drawDate)) {
+                  if (addDraw({
+                    year: yEntry.yearNum,
+                    date: curState.drawDate,
+                    dateLabel: curState.selectedDateLabel,
+                    mainNumbers: curState.mainNumbers,
+                    euroNumbers: curState.euroNumbers
+                  })) {
+                    addedThisRun++;
                   }
+                }
 
-                  const prevSignature = JSON.stringify((await readPageState()).mainNumbers);
+                if (!hasDateSelect) continue;
+
+                for (const opt of optsForYear) {
+                  if (addedThisRun >= MAX_NEW_DRAWS_PER_RUN) break;
+                  if (!opt.date || collectedMap.has(opt.date)) continue;
+
+                  const prevSig = JSON.stringify((await readPageState()).mainNumbers);
                   await page.selectOption("select[formcontrolname=\"datum\"]", { index: opt.index }).catch(() => {});
 
                   for (let step = 0; step < 12; step++) {
                     await page.waitForTimeout(200);
-                    const check = await readPageState();
-                    if (JSON.stringify(check.mainNumbers) !== prevSignature) {
+                    const chk = await readPageState();
+                    if (JSON.stringify(chk.mainNumbers) !== prevSig) {
                       break;
                     }
                   }
 
-                  const current = await readPageState();
-                  if (current.mainNumbers.length === 5 && current.euroNumbers.length === 2) {
-                    const wasAdded = addDraw({
-                      year: current.selectedYear ? Number(current.selectedYear) : null,
-                      date: current.drawDate,
-                      dateLabel: current.selectedDateLabel,
-                      mainNumbers: current.mainNumbers,
-                      euroNumbers: current.euroNumbers
-                    });
-                    if (wasAdded) addedThisRun++;
+                  const after = await readPageState();
+                  if (addDraw({
+                    year: yEntry.yearNum,
+                    date: after.drawDate || opt.date,
+                    dateLabel: after.selectedDateLabel || opt.label,
+                    mainNumbers: after.mainNumbers,
+                    euroNumbers: after.euroNumbers
+                  })) {
+                    addedThisRun++;
                   }
-                }
-              }
-
-              await collectCurrentYearDates();
-
-              const hasYearSelect = await page.locator("select[formcontrolname=\"jahr\"]").count().then((c) => c > 0);
-              if (hasYearSelect && Array.isArray(initial.yearOptions) && initial.yearOptions.length > 1) {
-                for (let yIdx = 1; yIdx < initial.yearOptions.length; yIdx++) {
-                  if (addedThisRun >= MAX_NEW_DRAWS_PER_RUN) break;
-
-                  const yOpt = initial.yearOptions[yIdx];
-                  const targetYearStr = yOpt.label.trim();
-
-                  await page.selectOption("select[formcontrolname=\"jahr\"]", { index: yOpt.index }).catch(() => {});
-
-                  // Asteptam pana cand dropdown-ul de date se actualizeaza pentru anul selectat
-                  for (let step = 0; step < 25; step++) {
-                    await page.waitForTimeout(250);
-                    const check = await readPageState();
-                    const firstDateLabel = check.dateOptions && check.dateOptions[0] ? check.dateOptions[0].label : "";
-                    if (check.selectedYear === targetYearStr && firstDateLabel.includes(targetYearStr)) {
-                      break;
-                    }
-                  }
-
-                  await page.waitForTimeout(600);
-                  await collectCurrentYearDates();
                 }
               }
 
