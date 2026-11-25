@@ -26,7 +26,7 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Render page and extract Eurojackpot draw
+      - name: Capture network API responses and page state
         run: |
           node -e '
           const fs = require("fs");
@@ -38,73 +38,71 @@ jobs:
               source: url,
               updatedAt: new Date().toISOString(),
               fetchedOk: false,
+              pageTitle: null,
               error: null,
-              detectedDate: null,
-              detectedYear: null,
-              availableYears: [],
-              availableDates: [],
+              networkJsonUrls: [],
+              networkSnippets: [],
+              bodyTextPreview: null,
               draws: []
             };
 
             let browser;
             try {
-              browser = await chromium.launch({ headless: true });
+              browser = await chromium.launch({
+                headless: true,
+                args: ["--disable-blink-features=AutomationControlled"]
+              });
               const context = await browser.newContext({
-                userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-                locale: "de-DE"
+                userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+                locale: "de-DE",
+                viewport: { width: 1280, height: 800 }
               });
               const page = await context.newPage();
 
-              await page.goto(url, { waitUntil: "networkidle", timeout: 60000 });
+              page.on("response", async (response) => {
+                try {
+                  const resUrl = response.url();
+                  const ct = response.headers()["content-type"] || "";
+                  if (ct.includes("json") || /api|draw|ziehung|zahlen|quoten|eurojackpot/i.test(resUrl)) {
+                    if (!/\.(js|css|svg|png|jpg|woff2?|ttf)(\?|$)/i.test(resUrl)) {
+                      output.networkJsonUrls.push({
+                        status: response.status(),
+                        url: resUrl
+                      });
+                      if (ct.includes("json") && response.status() === 200) {
+                        const txt = await response.text();
+                        output.networkSnippets.push({
+                          url: resUrl,
+                          preview: txt.slice(0, 400)
+                        });
+                      }
+                    }
+                  }
+                } catch (_) {}
+              });
 
-              // Asteptam ca aplicatia Angular sa populeze numerele castigatoare
-              await page.waitForSelector(".winning-number", { timeout: 30000 });
-              await page.waitForTimeout(1500);
+              await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
+              await page.waitForTimeout(8000);
 
-              const extracted = await page.evaluate(() => {
-                const yearSelect = document.querySelector("select[formcontrolname=\"jahr\"]");
-                const dateSelect = document.querySelector("select[formcontrolname=\"datum\"]");
-
-                const years = yearSelect
-                  ? Array.from(yearSelect.options).map((o) => o.text.trim()).filter(Boolean)
-                  : [];
-                const selectedYear = yearSelect && yearSelect.selectedOptions[0]
-                  ? yearSelect.selectedOptions[0].text.trim()
-                  : null;
-
-                const dates = dateSelect
-                  ? Array.from(dateSelect.options).map((o) => o.text.trim()).filter(Boolean)
-                  : [];
-                const selectedDate = dateSelect && dateSelect.selectedOptions[0]
-                  ? dateSelect.selectedOptions[0].text.trim()
-                  : null;
-
-                const numberNodes = Array.from(document.querySelectorAll(".winning-number"));
-                const numbers = numberNodes
+              output.pageTitle = await page.title();
+              const pageInfo = await page.evaluate(() => {
+                const bodyText = document.body ? document.body.innerText.replace(/\s+/g, " ").trim() : "";
+                const numbers = Array.from(document.querySelectorAll(".winning-number"))
                   .map((el) => Number(el.textContent.trim()))
                   .filter((n) => Number.isInteger(n) && n > 0);
-
                 return {
-                  years,
-                  selectedYear,
-                  dates,
-                  selectedDate,
+                  bodyText: bodyText.slice(0, 600),
                   numbers
                 };
               });
 
+              output.bodyTextPreview = pageInfo.bodyText;
               output.fetchedOk = true;
-              output.availableYears = extracted.years;
-              output.availableDates = extracted.dates.slice(0, 15);
-              output.detectedYear = extracted.selectedYear ? Number(extracted.selectedYear) : null;
-              output.detectedDate = extracted.selectedDate || null;
 
-              if (extracted.numbers.length >= 7) {
+              if (pageInfo.numbers.length >= 7) {
                 output.draws.push({
-                  year: output.detectedYear,
-                  date: output.detectedDate,
-                  mainNumbers: extracted.numbers.slice(0, 5),
-                  euroNumbers: extracted.numbers.slice(5, 7)
+                  mainNumbers: pageInfo.numbers.slice(0, 5),
+                  euroNumbers: pageInfo.numbers.slice(5, 7)
                 });
               }
             } catch (err) {
