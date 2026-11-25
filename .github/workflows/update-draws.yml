@@ -3,7 +3,12 @@ name: Update Eurojackpot Draws JSON
 on:
   schedule:
     - cron: "0 6 * * 3,6"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      years_range:
+        description: "Optional years (e.g. 2023-2019, 2017-2012, 2026). Leave empty for all years 2026-2012."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -11,6 +16,7 @@ permissions:
 jobs:
   fetch-draws:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,7 +32,9 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Fetch Eurojackpot draws from 2026 down to 2012
+      - name: Fetch complete Eurojackpot draws
+        env:
+          YEARS_RANGE: ${{ inputs.years_range }}
         run: |
           node -e '
           const fs = require("fs");
@@ -42,6 +50,32 @@ jobs:
             const m = String(dateStr || "").match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
             if (!m) return 0;
             return Number(`${m[3]}${m[2]}${m[1]}`);
+          }
+
+          function parseRequestedYears(rangeStr, availableYears) {
+            const raw = String(rangeStr || "").trim();
+            if (!raw) return availableYears;
+
+            const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+            const set = new Set();
+
+            for (const part of parts) {
+              const rangeMatch = part.match(/^(\d{4})\s*-\s*(\d{4})$/);
+              if (rangeMatch) {
+                const a = Number(rangeMatch[1]);
+                const b = Number(rangeMatch[2]);
+                const hi = Math.max(a, b);
+                const lo = Math.min(a, b);
+                for (let y = hi; y >= lo; y--) {
+                  set.add(String(y));
+                }
+              } else if (/^\d{4}$/.test(part)) {
+                set.add(part);
+              }
+            }
+
+            const filtered = availableYears.filter((y) => set.has(y));
+            return filtered.length > 0 ? filtered : Array.from(set).sort((a, b) => Number(b) - Number(a));
           }
 
           async function setSelectValue(page, selector, value) {
@@ -118,6 +152,14 @@ jobs:
               return true;
             }
 
+            function saveCleanJson() {
+              const draws = Array.from(collectedMap.values()).sort(
+                (a, b) => parseDMYToNum(b.date) - parseDMYToNum(a.date)
+              );
+              fs.writeFileSync("draws.json", JSON.stringify({ draws }, null, 2), "utf8");
+              return draws.length;
+            }
+
             try {
               if (fs.existsSync("draws.json")) {
                 const prev = JSON.parse(fs.readFileSync("draws.json", "utf8"));
@@ -131,7 +173,7 @@ jobs:
               console.error("Warning reading existing draws.json:", e.message);
             }
 
-            console.log("Loaded existing draws:", collectedMap.size);
+            console.log("Initial draws loaded:", collectedMap.size);
 
             let browser;
             try {
@@ -172,13 +214,14 @@ jobs:
                   .map((o) => o.value || o.text)
               );
 
-              const yearsToProcess = yearOptions.length > 0 ? yearOptions : Array.from({ length: 15 }, (_, i) => String(2026 - i));
+              const baseYears = yearOptions.length > 0 ? yearOptions : Array.from({ length: 15 }, (_, i) => String(2026 - i));
+              const yearsToProcess = parseRequestedYears(process.env.YEARS_RANGE, baseYears);
               console.log("Years to process:", yearsToProcess.join(", "));
 
               for (const yr of yearsToProcess) {
                 try {
                   await setSelectValue(page, "select[formcontrolname=\"jahr\"]", yr);
-                  await page.waitForTimeout(600);
+                  await page.waitForTimeout(700);
 
                   const dateValues = await page.locator("select[formcontrolname=\"datum\"] option").evaluateAll((opts) =>
                     opts
@@ -186,24 +229,28 @@ jobs:
                       .filter((v) => v.length > 0)
                   );
 
-                  console.log(`Year ${yr}: found ${dateValues.length} dates`);
-
+                  let addedThisYear = 0;
                   for (const dVal of dateValues) {
                     try {
                       await setSelectValue(page, "select[formcontrolname=\"datum\"]", dVal);
-                      await page.waitForTimeout(150);
+                      await page.waitForTimeout(180);
                       const draw = await readCurrentDraw(page, Number(yr));
-                      addDraw(draw);
+                      if (addDraw(draw)) {
+                        addedThisYear++;
+                      }
                     } catch (dateErr) {
                       console.error(`Error on year ${yr}, date ${dVal}:`, dateErr.message);
                     }
                   }
+
+                  const totalNow = saveCleanJson();
+                  console.log(`Year ${yr}: ${dateValues.length} dates checked, total saved: ${totalNow}`);
                 } catch (yrErr) {
                   console.error(`Error processing year ${yr}:`, yrErr.message);
                 }
               }
             } catch (err) {
-              console.error("Fatal browser error:", err);
+              console.error("Fatal error:", err.message);
               process.exitCode = 1;
             } finally {
               if (browser) {
@@ -211,12 +258,8 @@ jobs:
               }
             }
 
-            const draws = Array.from(collectedMap.values()).sort(
-              (a, b) => parseDMYToNum(b.date) - parseDMYToNum(a.date)
-            );
-
-            console.log("Total draws to save:", draws.length);
-            fs.writeFileSync("draws.json", JSON.stringify({ draws }, null, 2), "utf8");
+            const finalTotal = saveCleanJson();
+            console.log("Final total draws in draws.json:", finalTotal);
           }
 
           run();
