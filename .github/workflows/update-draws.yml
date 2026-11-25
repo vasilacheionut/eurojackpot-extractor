@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       years_range:
-        description: "Optional years (e.g. 2023-2019, 2017-2012, 2026). Leave empty for all years 2026-2012."
+        description: "Optional years (e.g. 2023-2019, 2017-2012, 2026). Leave empty for all years."
         required: false
         default: ""
 
@@ -74,25 +74,75 @@ jobs:
               }
             }
 
-            const filtered = availableYears.filter((y) => set.has(y));
-            return filtered.length > 0 ? filtered : Array.from(set).sort((a, b) => Number(b) - Number(a));
+            const filtered = availableYears.filter((y) => set.has(y.label) || set.has(y.value));
+            return filtered.length > 0 ? filtered : Array.from(set).sort((a, b) => Number(b) - Number(a)).map((y) => ({ label: y, value: y }));
           }
 
-          async function setSelectValue(page, selector, value) {
-            const loc = page.locator(selector).first();
-            try {
-              await loc.selectOption(value, { force: true, timeout: 8000 });
-            } catch (_) {}
+          async function selectYearOption(page, yearOpt) {
+            const sel = page.locator("select[formcontrolname=\"jahr\"]").first();
+            const prevFirstDate = await page.locator("select[formcontrolname=\"datum\"] option").first().textContent().catch(() => "");
 
-            await loc.evaluate((el, val) => {
-              el.value = val;
+            let selected = false;
+            if (yearOpt.value) {
+              selected = await sel.selectOption({ value: yearOpt.value }, { timeout: 6000 }).then(() => true).catch(() => false);
+            }
+            if (!selected && yearOpt.label) {
+              selected = await sel.selectOption({ label: yearOpt.label }, { timeout: 6000 }).then(() => true).catch(() => false);
+            }
+
+            await sel.evaluate((el, opt) => {
+              const target = Array.from(el.options).find(
+                (o) => (opt.value && o.value === opt.value) || (opt.label && (o.textContent || "").trim() === opt.label)
+              );
+              if (target) {
+                el.value = target.value;
+                target.selected = true;
+              } else if (opt.value) {
+                el.value = opt.value;
+              }
               el.dispatchEvent(new Event("input", { bubbles: true }));
               el.dispatchEvent(new Event("change", { bubbles: true }));
-            }, value);
+            }, yearOpt);
+
+            for (let i = 0; i < 15; i++) {
+              await page.waitForTimeout(200);
+              const curFirstDate = await page.locator("select[formcontrolname=\"datum\"] option").first().textContent().catch(() => "");
+              if (curFirstDate && curFirstDate !== prevFirstDate) {
+                break;
+              }
+            }
+            await page.waitForTimeout(400);
           }
 
-          async function readCurrentDraw(page, fallbackYear) {
-            return page.evaluate((fbYear) => {
+          async function selectDateOption(page, dateOpt) {
+            const sel = page.locator("select[formcontrolname=\"datum\"]").first();
+            let ok = false;
+            if (dateOpt.value) {
+              ok = await sel.selectOption({ value: dateOpt.value }, { timeout: 4000 }).then(() => true).catch(() => false);
+            }
+            if (!ok && dateOpt.label) {
+              ok = await sel.selectOption({ label: dateOpt.label }, { timeout: 4000 }).then(() => true).catch(() => false);
+            }
+            if (!ok) {
+              await sel.evaluate((el, opt) => {
+                const target = Array.from(el.options).find(
+                  (o) => (opt.value && o.value === opt.value) || (opt.label && (o.textContent || "").trim() === opt.label)
+                );
+                if (target) {
+                  el.value = target.value;
+                  target.selected = true;
+                } else if (opt.value) {
+                  el.value = opt.value;
+                }
+                el.dispatchEvent(new Event("input", { bubbles: true }));
+                el.dispatchEvent(new Event("change", { bubbles: true }));
+              }, dateOpt);
+            }
+            await page.waitForTimeout(180);
+          }
+
+          async function readCurrentDraw(page, fallbackYear, fallbackLabel) {
+            return page.evaluate(({ fbYear, fbLabel }) => {
               const host = document.querySelector("app-winning-numbers") || document.body;
               const winningEls = Array.from(host.querySelectorAll(".winning-number"));
               const nums = winningEls
@@ -108,10 +158,9 @@ jobs:
                 if (m) dateStr = m[1];
               }
 
-              if (!dateStr) {
-                const allText = (host.innerText || "").replace(/\s+/g, " ");
-                const matches = allText.match(/\b\d{2}\.\d{2}\.\d{4}\b/g) || [];
-                if (matches.length > 0) dateStr = matches[0];
+              if (!dateStr && fbLabel) {
+                const m = String(fbLabel).match(/\b(\d{2}\.\d{2}\.\d{4})\b/);
+                if (m) dateStr = m[1];
               }
 
               if (!dateStr && datumSelect && datumSelect.value) {
@@ -130,7 +179,7 @@ jobs:
                 mainNumbers: nums.slice(0, 5),
                 euroNumbers: nums.slice(5, 7)
               };
-            }, fallbackYear);
+            }, { fbYear: fallbackYear, fbLabel: fallbackLabel });
           }
 
           async function run() {
@@ -209,44 +258,54 @@ jobs:
 
               const yearOptions = await page.locator("select[formcontrolname=\"jahr\"] option").evaluateAll((opts) =>
                 opts
-                  .map((o) => ({ value: (o.value || "").trim(), text: (o.textContent || "").trim() }))
-                  .filter((o) => /^\d{4}$/.test(o.value || o.text))
-                  .map((o) => o.value || o.text)
+                  .map((o) => ({
+                    value: (o.value || "").trim(),
+                    label: (o.textContent || "").trim()
+                  }))
+                  .filter((o) => /^\d{4}$/.test(o.label) || /^\d{4}$/.test(o.value))
               );
 
-              const baseYears = yearOptions.length > 0 ? yearOptions : Array.from({ length: 15 }, (_, i) => String(2026 - i));
+              console.log("Available year options on site:", yearOptions.map((o) => `${o.label}(${o.value})`).join(", "));
+
+              const fallbackList = Array.from({ length: 15 }, (_, i) => ({
+                label: String(2026 - i),
+                value: String(2026 - i)
+              }));
+              const baseYears = yearOptions.length > 0 ? yearOptions : fallbackList;
               const yearsToProcess = parseRequestedYears(process.env.YEARS_RANGE, baseYears);
-              console.log("Years to process:", yearsToProcess.join(", "));
+              console.log("Years to process:", yearsToProcess.map((y) => y.label || y.value).join(", "));
 
-              for (const yr of yearsToProcess) {
+              for (const yrOpt of yearsToProcess) {
+                const yrLabel = yrOpt.label || yrOpt.value;
                 try {
-                  await setSelectValue(page, "select[formcontrolname=\"jahr\"]", yr);
-                  await page.waitForTimeout(700);
+                  await selectYearOption(page, yrOpt);
 
-                  const dateValues = await page.locator("select[formcontrolname=\"datum\"] option").evaluateAll((opts) =>
+                  const dateOptions = await page.locator("select[formcontrolname=\"datum\"] option").evaluateAll((opts) =>
                     opts
-                      .map((o) => (o.value || "").trim())
-                      .filter((v) => v.length > 0)
+                      .map((o) => ({
+                        value: (o.value || "").trim(),
+                        label: (o.textContent || "").trim()
+                      }))
+                      .filter((o) => o.value.length > 0 || o.label.length > 0)
                   );
 
                   let addedThisYear = 0;
-                  for (const dVal of dateValues) {
+                  for (const dOpt of dateOptions) {
                     try {
-                      await setSelectValue(page, "select[formcontrolname=\"datum\"]", dVal);
-                      await page.waitForTimeout(180);
-                      const draw = await readCurrentDraw(page, Number(yr));
+                      await selectDateOption(page, dOpt);
+                      const draw = await readCurrentDraw(page, Number(yrLabel), dOpt.label);
                       if (addDraw(draw)) {
                         addedThisYear++;
                       }
                     } catch (dateErr) {
-                      console.error(`Error on year ${yr}, date ${dVal}:`, dateErr.message);
+                      console.error(`Error on year ${yrLabel}, date ${dOpt.label || dOpt.value}:`, dateErr.message);
                     }
                   }
 
                   const totalNow = saveCleanJson();
-                  console.log(`Year ${yr}: ${dateValues.length} dates checked, total saved: ${totalNow}`);
+                  console.log(`Year ${yrLabel}: ${dateOptions.length} dates found, ${addedThisYear} parsed, total saved: ${totalNow}`);
                 } catch (yrErr) {
-                  console.error(`Error processing year ${yr}:`, yrErr.message);
+                  console.error(`Error processing year ${yrLabel}:`, yrErr.message);
                 }
               }
             } catch (err) {
