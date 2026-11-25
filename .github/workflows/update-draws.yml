@@ -26,14 +26,27 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Extract Eurojackpot winning numbers from rendered DOM
+      - name: Extract Eurojackpot draws history
         run: |
           node -e '
           const fs = require("fs");
           const { chromium } = require("playwright");
 
+          const MAX_DRAWS_PER_RUN = 40;
+
           async function run() {
             const url = "https://www.eurojackpot.com/";
+
+            let existingDraws = [];
+            try {
+              if (fs.existsSync("draws.json")) {
+                const prev = JSON.parse(fs.readFileSync("draws.json", "utf8"));
+                if (Array.isArray(prev.draws)) {
+                  existingDraws = prev.draws;
+                }
+              }
+            } catch (_) {}
+
             const output = {
               source: url,
               updatedAt: new Date().toISOString(),
@@ -41,6 +54,7 @@ jobs:
               error: null,
               nextDrawDate: null,
               latestDrawDate: null,
+              totalDraws: 0,
               draws: []
             };
 
@@ -75,90 +89,175 @@ jobs:
                 }
               }
 
-              await page.waitForTimeout(3000);
+              await page.waitForTimeout(2500);
 
-              const data = await page.evaluate(() => {
-                const host = document.querySelector("app-winning-numbers") || document.body;
+              async function readCurrentDraw() {
+                return await page.evaluate(() => {
+                  const host = document.querySelector("app-winning-numbers") || document.body;
 
-                // Data urmatoarei extrageri
-                const nextDateEl = host.querySelector(".next-win-date");
-                const nextDrawDate = nextDateEl ? nextDateEl.textContent.replace(/\s+/g, " ").trim() : null;
+                  const nextDateEl = host.querySelector(".next-win-date");
+                  const nextDrawDate = nextDateEl ? nextDateEl.textContent.replace(/\s+/g, " ").trim() : null;
 
-                // Select-urile de an si data
-                const yearSelect = host.querySelector("select[formcontrolname=\"jahr\"]");
-                const dateSelect = host.querySelector("select[formcontrolname=\"datum\"]");
+                  const yearSelect = host.querySelector("select[formcontrolname=\"jahr\"]");
+                  const dateSelect = host.querySelector("select[formcontrolname=\"datum\"]");
 
-                const selectedYear = yearSelect && yearSelect.selectedOptions[0]
-                  ? yearSelect.selectedOptions[0].text.trim()
-                  : null;
+                  const selectedYear = yearSelect && yearSelect.selectedOptions[0]
+                    ? yearSelect.selectedOptions[0].text.trim()
+                    : null;
 
-                const selectedDateText = dateSelect && dateSelect.selectedOptions[0]
-                  ? dateSelect.selectedOptions[0].text.trim()
-                  : null;
+                  const selectedDateLabel = dateSelect && dateSelect.selectedOptions[0]
+                    ? dateSelect.selectedOptions[0].text.trim()
+                    : null;
 
-                const firstDateOptionText = dateSelect && dateSelect.options[0]
-                  ? dateSelect.options[0].text.trim()
-                  : null;
+                  const dateOptions = dateSelect
+                    ? Array.from(dateSelect.options).map((o, idx) => ({
+                        index: idx,
+                        value: o.value,
+                        label: o.text.trim()
+                      }))
+                    : [];
 
-                const activeDateLabel = selectedDateText || firstDateOptionText || null;
-                const shortDateMatch = activeDateLabel ? activeDateLabel.match(/\b(\d{2}\.\d{2}\.\d{4})\b/) : null;
-                const drawDateShort = shortDateMatch ? shortDateMatch[1] : activeDateLabel;
+                  // Cautam bilele/numerele din zona numerelor castigatoare
+                  const allEls = Array.from(host.querySelectorAll("*"));
+                  const candidates = [];
 
-                // Cautam toate elementele frunza (fara copii) din host care contin doar un numar 1..50
-                const allEls = Array.from(host.querySelectorAll("*"));
-                const leafNumbers = [];
+                  for (const el of allEls) {
+                    if (el.children.length > 0) continue;
+                    if (el.closest("select") || el.closest("table")) continue;
 
-                for (const el of allEls) {
-                  if (el.children.length > 0) continue;
-                  const style = window.getComputedStyle(el);
-                  if (style.display === "none" || style.visibility === "hidden") continue;
+                    const style = window.getComputedStyle(el);
+                    if (style.display === "none" || style.visibility === "hidden") continue;
 
-                  // Ignoram optiunile din dropdown-uri (anii 2012-2026 si datele)
-                  if (el.closest("select")) continue;
-
-                  const txt = (el.textContent || "").trim();
-                  if (/^([1-9]|[1-4][0-9]|50)$/.test(txt)) {
-                    const rect = el.getBoundingClientRect();
-                    if (rect.width > 0 && rect.height > 0) {
-                      leafNumbers.push({
-                        value: Number(txt),
-                        top: Math.round(rect.top),
-                        left: Math.round(rect.left),
-                        cls: el.className || ""
-                      });
+                    const txt = (el.textContent || "").trim();
+                    if (/^([1-9]|[1-4][0-9]|50)$/.test(txt)) {
+                      const rect = el.getBoundingClientRect();
+                      if (rect.width >= 18 && rect.height >= 18 && rect.width <= 100 && rect.height <= 100) {
+                        candidates.push({
+                          value: Number(txt),
+                          top: Math.round(rect.top),
+                          left: Math.round(rect.left)
+                        });
+                      }
                     }
                   }
+
+                  candidates.sort((a, b) => (Math.abs(a.top - b.top) <= 12 ? a.left - b.left : a.top - b.top));
+
+                  // Eliminam eventualele duplicate exacte la aceeasi pozitie
+                  const uniquePos = [];
+                  for (const item of candidates) {
+                    const dup = uniquePos.some(
+                      (u) => u.value === item.value && Math.abs(u.top - item.top) <= 4 && Math.abs(u.left - item.left) <= 4
+                    );
+                    if (!dup) uniquePos.push(item);
+                  }
+
+                  const values = uniquePos.map((x) => x.value);
+                  const mainNumbers = values.slice(0, 5);
+
+                  // Euro-numerele sunt cele 2 numere urmatoare valide intre 1 si 12
+                  const afterMain = values.slice(5);
+                  const euroNumbers = afterMain.filter((n) => n >= 1 && n <= 12).slice(0, 2);
+
+                  const shortMatch = selectedDateLabel ? selectedDateLabel.match(/\b(\d{2}\.\d{2}\.\d{4})\b/) : null;
+                  const drawDate = shortMatch ? shortMatch[1] : selectedDateLabel;
+
+                  return {
+                    nextDrawDate,
+                    selectedYear,
+                    selectedDateLabel,
+                    drawDate,
+                    dateOptions,
+                    mainNumbers,
+                    euroNumbers
+                  };
+                });
+              }
+
+              const initial = await readCurrentDraw();
+              output.fetchedOk = true;
+              output.nextDrawDate = initial.nextDrawDate;
+              output.latestDrawDate = initial.selectedDateLabel;
+
+              const collectedMap = new Map();
+
+              function addDraw(d) {
+                if (!d || !Array.isArray(d.mainNumbers) || d.mainNumbers.length !== 5) return;
+                if (!Array.isArray(d.euroNumbers) || d.euroNumbers.length !== 2) return;
+                const key = d.date || d.dateLabel;
+                if (!key) return;
+                collectedMap.set(key, {
+                  year: d.year || null,
+                  date: d.date,
+                  dateLabel: d.dateLabel || d.date,
+                  mainNumbers: d.mainNumbers,
+                  euroNumbers: d.euroNumbers
+                });
+              }
+
+              // Adaugam mai intai extragerile deja salvate in draws.json
+              for (const oldDraw of existingDraws) {
+                addDraw(oldDraw);
+              }
+
+              // Adaugam extragerea curenta
+              if (initial.mainNumbers.length === 5 && initial.euroNumbers.length === 2) {
+                addDraw({
+                  year: initial.selectedYear ? Number(initial.selectedYear) : null,
+                  date: initial.drawDate,
+                  dateLabel: initial.selectedDateLabel,
+                  mainNumbers: initial.mainNumbers,
+                  euroNumbers: initial.euroNumbers
+                });
+              }
+
+              // Parcurgem optiunile din select[formcontrolname="datum"] pentru extragerile anterioare
+              const dateSelectLocator = page.locator("select[formcontrolname=\"datum\"]");
+              const hasDateSelect = await dateSelectLocator.count().then((c) => c > 0);
+
+              if (hasDateSelect && Array.isArray(initial.dateOptions) && initial.dateOptions.length > 1) {
+                const limit = Math.min(initial.dateOptions.length, MAX_DRAWS_PER_RUN);
+                for (let i = 1; i < limit; i++) {
+                  const opt = initial.dateOptions[i];
+                  const prevDateLabel = (await readCurrentDraw()).selectedDateLabel;
+
+                  await dateSelectLocator.selectOption({ index: opt.index });
+                  await dateSelectLocator.dispatchEvent("change");
+
+                  // Asteptam pana se schimba data selectata sau pana expira scurtul timeout
+                  for (let waitStep = 0; waitStep < 10; waitStep++) {
+                    await page.waitForTimeout(300);
+                    const check = await readCurrentDraw();
+                    if (check.selectedDateLabel && check.selectedDateLabel !== prevDateLabel) {
+                      break;
+                    }
+                  }
+
+                  const current = await readCurrentDraw();
+                  if (current.mainNumbers.length === 5 && current.euroNumbers.length === 2) {
+                    addDraw({
+                      year: current.selectedYear ? Number(current.selectedYear) : null,
+                      date: current.drawDate,
+                      dateLabel: current.selectedDateLabel,
+                      mainNumbers: current.mainNumbers,
+                      euroNumbers: current.euroNumbers
+                    });
+                  }
                 }
+              }
 
-                // Sortam de sus in jos, apoi de la stanga la dreapta
-                leafNumbers.sort((a, b) => (Math.abs(a.top - b.top) <= 10 ? a.left - b.left : a.top - b.top));
-
-                return {
-                  nextDrawDate,
-                  selectedYear,
-                  activeDateLabel,
-                  drawDateShort,
-                  leafNumbers
+              // Sortam descrescator dupa data (dd.mm.yyyy) cand este disponibila
+              const allDraws = Array.from(collectedMap.values()).sort((a, b) => {
+                const parseDMY = (s) => {
+                  const m = (s || "").match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+                  if (!m) return 0;
+                  return Number(`${m[3]}${m[2]}${m[1]}`);
                 };
+                return parseDMY(b.date) - parseDMY(a.date);
               });
 
-              output.fetchedOk = true;
-              output.nextDrawDate = data.nextDrawDate;
-              output.latestDrawDate = data.activeDateLabel;
-
-              const nums = data.leafNumbers.map((x) => x.value);
-              if (nums.length >= 7) {
-                output.draws.push({
-                  year: data.selectedYear ? Number(data.selectedYear) : null,
-                  date: data.drawDateShort,
-                  dateLabel: data.activeDateLabel,
-                  mainNumbers: nums.slice(0, 5),
-                  euroNumbers: nums.slice(5, 7),
-                  nextDrawDate: data.nextDrawDate
-                });
-              } else {
-                output.debugLeafNumbers = data.leafNumbers.slice(0, 20);
-              }
+              output.draws = allDraws;
+              output.totalDraws = allDraws.length;
             } catch (err) {
               output.error = err.message;
             } finally {
