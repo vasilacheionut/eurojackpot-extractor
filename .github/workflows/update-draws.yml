@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       years_range:
-        description: "Optional years (e.g. 2026, 2024-2022). Leave empty: all years on 1st run, current year after."
+        description: "Optional years (e.g. 2026, 2026-2020, 2019-2012). Leave empty to process all years in years-dates.json."
         required: false
         default: ""
 
@@ -16,7 +16,7 @@ permissions:
 jobs:
   fetch-draws:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -60,13 +60,11 @@ jobs:
             if (!Array.isArray(d.euroNumbers) || d.euroNumbers.length !== 2) return false;
 
             const mainSet = new Set(d.mainNumbers);
-            if (mainSet.size !== 5 || d.mainNumbers.some((n) => !Number.isInteger(n) || n < 1 || n > 50)) {
-              return false;
-            }
+            if (mainSet.size !== 5 || d.mainNumbers.some((n) => !Number.isInteger(n) || n < 1 || n > 50)) return false;
+
             const euroSet = new Set(d.euroNumbers);
-            if (euroSet.size !== 2 || d.euroNumbers.some((n) => !Number.isInteger(n) || n < 1 || n > 12)) {
-              return false;
-            }
+            if (euroSet.size !== 2 || d.euroNumbers.some((n) => !Number.isInteger(n) || n < 1 || n > 12)) return false;
+
             return true;
           }
 
@@ -95,18 +93,9 @@ jobs:
             fs.writeFileSync("years-dates.json", JSON.stringify({ years }, null, 2), "utf8");
           }
 
-          function parseYearsToRun(rangeStr, allYearsSorted, hasExistingDraws) {
+          function parseYearsToRun(rangeStr, allYearsDesc) {
             const raw = String(rangeStr || "").trim();
-
-            if (!raw) {
-              if (!hasExistingDraws) {
-                console.log("No existing draws found -> running all years from index.");
-                return allYearsSorted;
-              }
-              const currentYear = Number(new Date().getFullYear());
-              console.log(`Existing draws found -> updating current year (${currentYear}).`);
-              return allYearsSorted.includes(currentYear) ? [currentYear] : [currentYear];
-            }
+            if (!raw) return allYearsDesc;
 
             const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
             const set = new Set();
@@ -118,59 +107,38 @@ jobs:
                 const b = Number(rangeMatch[2]);
                 const hi = Math.max(a, b);
                 const lo = Math.min(a, b);
-                for (let y = lo; y <= hi; y++) set.add(y);
+                for (let y = hi; y >= lo; y--) set.add(y);
               } else if (/^\d{4}$/.test(part)) {
                 set.add(Number(part));
               }
             }
 
-            return Array.from(set).sort((a, b) => a - b);
+            return Array.from(set).sort((a, b) => b - a);
           }
 
-          async function selectDropdownByTextOrValue(page, selector, matchers) {
+          async function selectOptionContaining(page, selector, targetText) {
             const sel = page.locator(selector).first();
-            for (const m of matchers) {
-              if (m.value) {
-                const ok = await sel.selectOption({ value: m.value }, { timeout: 4000 }).then(() => true).catch(() => false);
-                if (ok) {
-                  await sel.evaluate((el) => {
-                    el.dispatchEvent(new Event("input", { bubbles: true }));
-                    el.dispatchEvent(new Event("change", { bubbles: true }));
-                  });
-                  return true;
-                }
-              }
-              if (m.label) {
-                const ok = await sel.selectOption({ label: m.label }, { timeout: 4000 }).then(() => true).catch(() => false);
-                if (ok) {
-                  await sel.evaluate((el) => {
-                    el.dispatchEvent(new Event("input", { bubbles: true }));
-                    el.dispatchEvent(new Event("change", { bubbles: true }));
-                  });
-                  return true;
-                }
-              }
-            }
+            const matchInfo = await sel.evaluate((el, txt) => {
+              const idx = Array.from(el.options).findIndex((o) => {
+                const t = (o.textContent || "").trim();
+                const v = (o.value || "").trim();
+                return t === txt || t.includes(txt) || v === txt || v.includes(txt);
+              });
+              if (idx === -1) return null;
+              return { index: idx, value: el.options[idx].value, label: (el.options[idx].textContent || "").trim() };
+            }, targetText);
 
-            return sel.evaluate((el, list) => {
-              for (const m of list) {
-                const opt = Array.from(el.options).find((o) => {
-                  const val = (o.value || "").trim();
-                  const txt = (o.textContent || "").trim();
-                  return (m.value && val === m.value) ||
-                         (m.label && txt === m.label) ||
-                         (m.contains && txt.includes(m.contains));
-                });
-                if (opt) {
-                  el.value = opt.value;
-                  opt.selected = true;
-                  el.dispatchEvent(new Event("input", { bubbles: true }));
-                  el.dispatchEvent(new Event("change", { bubbles: true }));
-                  return true;
-                }
-              }
-              return false;
-            }, matchers);
+            if (!matchInfo) return false;
+
+            await sel.selectOption({ index: matchInfo.index }, { timeout: 5000 }).catch(() => {});
+            await sel.evaluate((el, idx) => {
+              el.selectedIndex = idx;
+              if (el.options[idx]) el.value = el.options[idx].value;
+              el.dispatchEvent(new Event("input", { bubbles: true }));
+              el.dispatchEvent(new Event("change", { bubbles: true }));
+            }, matchInfo.index);
+
+            return true;
           }
 
           async function readWinningNumbers(page) {
@@ -190,7 +158,7 @@ jobs:
           async function run() {
             const yearsMap = loadYearsDatesMap();
             if (yearsMap.size === 0) {
-              throw new Error("years-dates.json is missing or empty. Run build-years-dates workflow first.");
+              throw new Error("years-dates.json is missing or empty.");
             }
 
             const drawsMap = new Map();
@@ -214,9 +182,6 @@ jobs:
               }
             }
 
-            const hasExistingDraws = drawsMap.size > 0;
-            console.log("Loaded valid existing draws:", drawsMap.size);
-
             function saveDrawsJson() {
               const draws = Array.from(drawsMap.values()).sort(
                 (a, b) => parseDMYToNum(b.date) - parseDMYToNum(a.date)
@@ -225,8 +190,8 @@ jobs:
               return draws.length;
             }
 
-            const allYearsSorted = Array.from(yearsMap.keys()).sort((a, b) => a - b);
-            const yearsToProcess = parseYearsToRun(process.env.YEARS_RANGE, allYearsSorted, hasExistingDraws);
+            const allYearsDesc = Array.from(yearsMap.keys()).sort((a, b) => b - a);
+            const yearsToProcess = parseYearsToRun(process.env.YEARS_RANGE, allYearsDesc);
             console.log("Years to process:", yearsToProcess.join(", "));
 
             const currentCalendarYear = Number(new Date().getFullYear());
@@ -263,74 +228,80 @@ jobs:
                 }
               }
 
-              let lastNumbersKey = "";
+              const initialDraw = await readWinningNumbers(page);
+              let lastKey = `${initialDraw.mainNumbers.join(",")}|${initialDraw.euroNumbers.join(",")}`;
 
               for (const yr of yearsToProcess) {
-                const okYear = await selectDropdownByTextOrValue(page, "select[formcontrolname=\"jahr\"]", [
-                  { value: String(yr), label: String(yr), contains: String(yr) }
-                ]);
+                const prevFirstDatum = await page.locator("select[formcontrolname=\"datum\"] option").first().textContent().catch(() => "");
+                const okYear = await selectOptionContaining(page, "select[formcontrolname=\"jahr\"]", String(yr));
                 if (!okYear) {
-                  console.error(`Could not select year ${yr} on site.`);
+                  console.error(`Year ${yr} not found in dropdown.`);
                   continue;
                 }
-                await page.waitForTimeout(500);
+
+                for (let w = 0; w < 20; w++) {
+                  await page.waitForTimeout(200);
+                  const curFirstDatum = await page.locator("select[formcontrolname=\"datum\"] option").first().textContent().catch(() => "");
+                  if (curFirstDatum && curFirstDatum !== prevFirstDatum) break;
+                }
+                await page.waitForTimeout(400);
 
                 const dateSet = yearsMap.get(yr) || new Set();
-
-                // If running current year, also sync any newly added dates from site dropdown
                 if (yr === currentCalendarYear) {
                   const siteDates = await page.locator("select[formcontrolname=\"datum\"] option").evaluateAll((opts) =>
                     opts
                       .map((o) => {
                         const txt = (o.textContent || "").trim();
                         const m = txt.match(/\b(\d{2}\.\d{2}\.\d{4})\b/);
-                        if (m) return m[1];
-                        const iso = String(o.value || "").trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
-                        if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
-                        return null;
+                        return m ? m[1] : null;
                       })
                       .filter(Boolean)
                   );
-                  for (const sd of siteDates) {
-                    dateSet.add(sd);
-                  }
+                  for (const sd of siteDates) dateSet.add(sd);
                   yearsMap.set(yr, dateSet);
                   saveYearsDatesMap(yearsMap);
                 }
 
-                const orderedDates = Array.from(dateSet).sort((a, b) => parseDMYToNum(a) - parseDMYToNum(b));
+                const orderedDates = Array.from(dateSet).sort((a, b) => parseDMYToNum(b) - parseDMYToNum(a));
                 let fetchedCount = 0;
                 let skippedCount = 0;
 
                 for (const dt of orderedDates) {
-                  if (drawsMap.has(dt) && yr !== currentCalendarYear) {
+                  if (drawsMap.has(dt)) {
                     skippedCount++;
                     continue;
                   }
 
-                  const [dd, mm, yyyy] = dt.split(".");
-                  const isoVal = `${yyyy}-${mm}-${dd}`;
-                  const okDate = await selectDropdownByTextOrValue(page, "select[formcontrolname=\"datum\"]", [
-                    { value: isoVal, label: dt, contains: dt }
-                  ]);
+                  let okDate = await selectOptionContaining(page, "select[formcontrolname=\"datum\"]", dt);
                   if (!okDate) {
-                    console.error(`Could not select date ${dt} in year ${yr}.`);
+                    console.error(`Date ${dt} not found in dropdown for year ${yr}.`);
                     continue;
                   }
 
                   let parsed = null;
-                  for (let attempt = 0; attempt < 12; attempt++) {
-                    await page.waitForTimeout(150);
+                  for (let attempt = 0; attempt < 25; attempt++) {
+                    await page.waitForTimeout(200);
                     const cur = await readWinningNumbers(page);
                     const key = `${cur.mainNumbers.join(",")}|${cur.euroNumbers.join(",")}`;
-                    if (cur.mainNumbers.length === 5 && cur.euroNumbers.length === 2 && key !== lastNumbersKey) {
-                      lastNumbersKey = key;
+                    if (cur.mainNumbers.length === 5 && cur.euroNumbers.length === 2 && key !== lastKey) {
+                      lastKey = key;
                       parsed = cur;
                       break;
                     }
-                    if (attempt >= 5 && cur.mainNumbers.length === 5 && cur.euroNumbers.length === 2) {
+                    if (attempt === 10) {
+                      await selectOptionContaining(page, "select[formcontrolname=\"datum\"]", dt);
+                    }
+                  }
+
+                  // Fallback only if the very first date on page happened to match initialDraw
+                  if (!parsed) {
+                    const selectedText = await page.locator("select[formcontrolname=\"datum\"]").evaluate((el) => {
+                      const opt = el.selectedOptions && el.selectedOptions[0];
+                      return opt ? (opt.textContent || "").trim() : "";
+                    });
+                    const cur = await readWinningNumbers(page);
+                    if (selectedText.includes(dt) && cur.mainNumbers.length === 5 && cur.euroNumbers.length === 2) {
                       parsed = cur;
-                      break;
                     }
                   }
 
@@ -348,8 +319,8 @@ jobs:
                   }
                 }
 
-                const savedTotal = saveDrawsJson();
-                console.log(`Year ${yr}: fetched=${fetchedCount}, skipped=${skippedCount}, total draws=${savedTotal}`);
+                const totalSaved = saveDrawsJson();
+                console.log(`Year ${yr}: fetched=${fetchedCount}, skipped=${skippedCount}, total=${totalSaved}`);
               }
             } catch (err) {
               console.error("Fatal error:", err.message);
@@ -378,6 +349,8 @@ jobs:
 
           const seenDates = new Set();
           const byYear = {};
+          let identicalStreak = 0;
+          let prevSig = "";
 
           for (const d of data.draws) {
             if (!/^\d{2}\.\d{2}\.\d{4}$/.test(String(d.date || ""))) {
@@ -407,6 +380,17 @@ jobs:
             const euroSet = new Set(d.euroNumbers);
             if (euroSet.size !== 2 || d.euroNumbers.some((n) => !Number.isInteger(n) || n < 1 || n > 12)) {
               throw new Error(`Out of range/duplicate euroNumbers on ${d.date}`);
+            }
+
+            const sig = `${d.mainNumbers.join(",")}|${d.euroNumbers.join(",")}`;
+            if (sig === prevSig) {
+              identicalStreak++;
+              if (identicalStreak >= 3) {
+                throw new Error(`Detected stuck/repeated numbers around ${d.date}: ${sig}`);
+              }
+            } else {
+              identicalStreak = 0;
+              prevSig = sig;
             }
 
             byYear[d.year] = (byYear[d.year] || 0) + 1;
