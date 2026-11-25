@@ -26,13 +26,14 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Extract Eurojackpot draws history
+      - name: Extract Eurojackpot draws history across dates and years
         run: |
           node -e '
           const fs = require("fs");
           const { chromium } = require("playwright");
 
-          const MAX_DRAWS_PER_RUN = 30;
+          const MAX_DRAWS_PER_RUN = 80;
+          const MAX_YEARS_PER_RUN = 3;
 
           async function run() {
             const url = "https://www.eurojackpot.com/";
@@ -105,6 +106,14 @@ jobs:
                     ? yearSelect.selectedOptions[0].text.trim()
                     : null;
 
+                  const yearOptions = yearSelect
+                    ? Array.from(yearSelect.options).map((o, idx) => ({
+                        index: idx,
+                        value: o.value,
+                        label: o.text.trim()
+                      }))
+                    : [];
+
                   const selectedDateLabel = dateSelect && dateSelect.selectedOptions[0]
                     ? dateSelect.selectedOptions[0].text.trim()
                     : null;
@@ -117,7 +126,6 @@ jobs:
                       }))
                     : [];
 
-                  // Delimitam zona numerelor castigatoare: sub select-ul de data si deasupra "Show video" / "Prize breakdown"
                   const dateRect = dateSelect ? dateSelect.getBoundingClientRect() : { bottom: 0 };
                   const allEls = Array.from(host.querySelectorAll("*"));
 
@@ -178,6 +186,7 @@ jobs:
                   return {
                     nextDrawDate,
                     selectedYear,
+                    yearOptions,
                     selectedDateLabel,
                     drawDate,
                     dateOptions,
@@ -212,22 +221,28 @@ jobs:
                 addDraw(oldDraw);
               }
 
-              if (initial.mainNumbers.length === 5 && initial.euroNumbers.length === 2) {
-                addDraw({
-                  year: initial.selectedYear ? Number(initial.selectedYear) : null,
-                  date: initial.drawDate,
-                  dateLabel: initial.selectedDateLabel,
-                  mainNumbers: initial.mainNumbers,
-                  euroNumbers: initial.euroNumbers
-                });
-              }
+              let extractedInRun = 0;
 
-              const hasDateSelect = await page.locator("select[formcontrolname=\"datum\"]").count().then((c) => c > 0);
+              async function collectDatesForCurrentYear() {
+                const state = await readCurrentDraw();
+                if (state.mainNumbers.length === 5 && state.euroNumbers.length === 2) {
+                  addDraw({
+                    year: state.selectedYear ? Number(state.selectedYear) : null,
+                    date: state.drawDate,
+                    dateLabel: state.selectedDateLabel,
+                    mainNumbers: state.mainNumbers,
+                    euroNumbers: state.euroNumbers
+                  });
+                  extractedInRun++;
+                }
 
-              if (hasDateSelect && Array.isArray(initial.dateOptions) && initial.dateOptions.length > 1) {
-                const limit = Math.min(initial.dateOptions.length, MAX_DRAWS_PER_RUN);
-                for (let i = 1; i < limit; i++) {
-                  const opt = initial.dateOptions[i];
+                const hasDateSelect = await page.locator("select[formcontrolname=\"datum\"]").count().then((c) => c > 0);
+                if (!hasDateSelect || !Array.isArray(state.dateOptions)) return;
+
+                for (let i = 1; i < state.dateOptions.length; i++) {
+                  if (extractedInRun >= MAX_DRAWS_PER_RUN) break;
+
+                  const opt = state.dateOptions[i];
                   const prevSignature = JSON.stringify((await readCurrentDraw()).mainNumbers);
 
                   await page.selectOption("select[formcontrolname=\"datum\"]", { index: opt.index }).catch(() => {});
@@ -249,7 +264,34 @@ jobs:
                       mainNumbers: current.mainNumbers,
                       euroNumbers: current.euroNumbers
                     });
+                    extractedInRun++;
                   }
+                }
+              }
+
+              await collectDatesForCurrentYear();
+
+              const hasYearSelect = await page.locator("select[formcontrolname=\"jahr\"]").count().then((c) => c > 0);
+              if (hasYearSelect && Array.isArray(initial.yearOptions) && initial.yearOptions.length > 1) {
+                const yearLimit = Math.min(initial.yearOptions.length, MAX_YEARS_PER_RUN);
+                for (let yIdx = 1; yIdx < yearLimit; yIdx++) {
+                  if (extractedInRun >= MAX_DRAWS_PER_RUN) break;
+
+                  const yOpt = initial.yearOptions[yIdx];
+                  const prevYear = (await readCurrentDraw()).selectedYear;
+
+                  await page.selectOption("select[formcontrolname=\"jahr\"]", { index: yOpt.index }).catch(() => {});
+
+                  for (let step = 0; step < 15; step++) {
+                    await page.waitForTimeout(300);
+                    const check = await readCurrentDraw();
+                    if (check.selectedYear && check.selectedYear !== prevYear) {
+                      break;
+                    }
+                  }
+
+                  await page.waitForTimeout(800);
+                  await collectDatesForCurrentYear();
                 }
               }
 
