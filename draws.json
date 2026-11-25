@@ -1,12 +1,36 @@
 {
   "source": "https://www.eurojackpot.com/",
-  "updatedAt": "2026-11-25T11:06:49.309Z",
+  "updatedAt": "2026-11-25T11:19:29.994Z",
   "fetchedOk": true,
   "error": null,
   "nextDrawDate": "Friday, 27 November 2026",
   "latestDrawDate": "Tuesday, 24.11.2026",
   "availableYears": [],
   "datesByYear": {},
+  "debugControls": {
+    "selectCount": 2,
+    "selects": [
+      {
+        "idx": 0,
+        "id": null,
+        "name": null,
+        "formControlName": "jahr",
+        "ariaLabel": null,
+        "optionsCount": 0,
+        "sampleOptions": []
+      },
+      {
+        "idx": 1,
+        "id": null,
+        "name": null,
+        "formControlName": "datum",
+        "ariaLabel": null,
+        "optionsCount": 0,
+        "sampleOptions": []
+      }
+    ],
+    "roleComboboxes": []
+  },
   "totalDraws": 280,
   "draws": [
     {
