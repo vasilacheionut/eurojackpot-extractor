@@ -26,7 +26,7 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Inspect rendered DOM like Inspect Element
+      - name: Extract Eurojackpot winning numbers
         run: |
           node -e '
           const fs = require("fs");
@@ -39,9 +39,8 @@ jobs:
               updatedAt: new Date().toISOString(),
               fetchedOk: false,
               error: null,
-              pageTitle: null,
-              visibleText: null,
-              renderedHtmlPreview: null,
+              nextDrawDate: null,
+              latestDrawDate: null,
               draws: []
             };
 
@@ -53,7 +52,7 @@ jobs:
               });
               const context = await browser.newContext({
                 userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-                locale: "de-DE",
+                locale: "en-US",
                 viewport: { width: 1280, height: 800 }
               });
               const page = await context.newPage();
@@ -61,12 +60,11 @@ jobs:
               await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
               await page.waitForTimeout(6000);
 
-              // Incercam sa inchidem eventuale bannere de cookies daca apar
               const cookieButtons = [
-                "button:has-text(\"Akzeptieren\")",
-                "button:has-text(\"Alle akzeptieren\")",
                 "button:has-text(\"Accept\")",
-                "button:has-text(\"Agree\")"
+                "button:has-text(\"Agree\")",
+                "button:has-text(\"Akzeptieren\")",
+                "button:has-text(\"Alle akzeptieren\")"
               ];
               for (const sel of cookieButtons) {
                 const btn = page.locator(sel).first();
@@ -77,24 +75,99 @@ jobs:
                 }
               }
 
-              await page.waitForTimeout(4000);
+              await page.waitForTimeout(3000);
 
-              output.pageTitle = await page.title();
+              const parsed = await page.evaluate(() => {
+                const host = document.querySelector("app-winning-numbers") || document.body;
+                const fullText = host ? host.innerText : "";
+                const lines = fullText
+                  .split(/\r?\n/)
+                  .map((l) => l.trim())
+                  .filter(Boolean);
 
-              const domData = await page.evaluate(() => {
-                const text = document.body ? document.body.innerText.replace(/\s+/g, " ").trim() : "";
-                const html = document.querySelector("app-winning-numbers")
-                  ? document.querySelector("app-winning-numbers").outerHTML
-                  : (document.body ? document.body.innerHTML : "");
+                let nextDraw = null;
+                const nextIdx = lines.findIndex((l) => /next chance to win/i.test(l));
+                if (nextIdx !== -1 && lines[nextIdx + 1]) {
+                  nextDraw = lines[nextIdx + 1];
+                }
+
+                // Cautam sectiunea Winning numbers si primele numere intregi afisate dupa selectorul de data
+                const winIdx = lines.findIndex((l) => /^winning numbers$/i.test(l));
+                const searchLines = winIdx !== -1 ? lines.slice(winIdx) : lines;
+
+                // Identificam prima data de forma dd.mm.yyyy in text
+                const dateMatch = fullText.match(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\s*(\d{2}\.\d{2}\.\d{4})\b/i);
+                const drawDateLabel = dateMatch ? dateMatch[0] : null;
+                const drawDateShort = dateMatch ? dateMatch[2] : null;
+
+                // Extragem elementele vizibile de tip bilă/număr din zona Winning numbers
+                const candidateNumbers = [];
+                const numberSelectors = [
+                  ".winning-number",
+                  "[class*=\"winning-number\"]",
+                  "[class*=\"ball\"]",
+                  "[class*=\"number\"]"
+                ];
+
+                for (const sel of numberSelectors) {
+                  const nodes = Array.from(host.querySelectorAll(sel));
+                  const nums = nodes
+                    .map((el) => {
+                      const txt = (el.textContent || "").trim();
+                      if (!/^\d{1,2}$/.test(txt)) return null;
+                      return Number(txt);
+                    })
+                    .filter((n) => n !== null && n >= 1 && n <= 50);
+
+                  if (nums.length >= 7) {
+                    return {
+                      nextDraw,
+                      drawDateLabel,
+                      drawDateShort,
+                      numbers: nums.slice(0, 7),
+                      sourceSelector: sel
+                    };
+                  }
+                }
+
+                // Fallback pe liniile din jurul datei extragerii
+                const afterDateIdx = drawDateLabel
+                  ? searchLines.findIndex((l) => l.includes(drawDateLabel))
+                  : 0;
+                const sliceAfterDate = afterDateIdx !== -1 ? searchLines.slice(afterDateIdx + 1, afterDateIdx + 25) : searchLines.slice(0, 25);
+
+                for (const item of sliceAfterDate) {
+                  if (/^\d{1,2}$/.test(item)) {
+                    const val = Number(item);
+                    if (val >= 1 && val <= 50) {
+                      candidateNumbers.push(val);
+                    }
+                  }
+                  if (candidateNumbers.length >= 7) break;
+                }
+
                 return {
-                  text,
-                  html
+                  nextDraw,
+                  drawDateLabel,
+                  drawDateShort,
+                  numbers: candidateNumbers.slice(0, 7),
+                  sourceSelector: "text-fallback"
                 };
               });
 
-              output.visibleText = domData.text.slice(0, 1500);
-              output.renderedHtmlPreview = domData.html.slice(0, 1500);
               output.fetchedOk = true;
+              output.nextDrawDate = parsed.nextDraw;
+              output.latestDrawDate = parsed.drawDateLabel;
+
+              if (parsed.numbers && parsed.numbers.length >= 7) {
+                output.draws.push({
+                  date: parsed.drawDateShort || parsed.drawDateLabel,
+                  dateLabel: parsed.drawDateLabel,
+                  mainNumbers: parsed.numbers.slice(0, 5),
+                  euroNumbers: parsed.numbers.slice(5, 7),
+                  nextDrawDate: parsed.nextDraw
+                });
+              }
             } catch (err) {
               output.error = err.message;
             } finally {
