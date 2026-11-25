@@ -26,7 +26,7 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Extract Eurojackpot winning numbers
+      - name: Extract Eurojackpot winning numbers from rendered DOM
         run: |
           node -e '
           const fs = require("fs");
@@ -58,7 +58,7 @@ jobs:
               const page = await context.newPage();
 
               await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
-              await page.waitForTimeout(6000);
+              await page.waitForTimeout(7000);
 
               const cookieButtons = [
                 "button:has-text(\"Accept\")",
@@ -77,96 +77,87 @@ jobs:
 
               await page.waitForTimeout(3000);
 
-              const parsed = await page.evaluate(() => {
+              const data = await page.evaluate(() => {
                 const host = document.querySelector("app-winning-numbers") || document.body;
-                const fullText = host ? host.innerText : "";
-                const lines = fullText
-                  .split(/\r?\n/)
-                  .map((l) => l.trim())
-                  .filter(Boolean);
 
-                let nextDraw = null;
-                const nextIdx = lines.findIndex((l) => /next chance to win/i.test(l));
-                if (nextIdx !== -1 && lines[nextIdx + 1]) {
-                  nextDraw = lines[nextIdx + 1];
-                }
+                // Data urmatoarei extrageri
+                const nextDateEl = host.querySelector(".next-win-date");
+                const nextDrawDate = nextDateEl ? nextDateEl.textContent.replace(/\s+/g, " ").trim() : null;
 
-                // Cautam sectiunea Winning numbers si primele numere intregi afisate dupa selectorul de data
-                const winIdx = lines.findIndex((l) => /^winning numbers$/i.test(l));
-                const searchLines = winIdx !== -1 ? lines.slice(winIdx) : lines;
+                // Select-urile de an si data
+                const yearSelect = host.querySelector("select[formcontrolname=\"jahr\"]");
+                const dateSelect = host.querySelector("select[formcontrolname=\"datum\"]");
 
-                // Identificam prima data de forma dd.mm.yyyy in text
-                const dateMatch = fullText.match(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\s*(\d{2}\.\d{2}\.\d{4})\b/i);
-                const drawDateLabel = dateMatch ? dateMatch[0] : null;
-                const drawDateShort = dateMatch ? dateMatch[2] : null;
+                const selectedYear = yearSelect && yearSelect.selectedOptions[0]
+                  ? yearSelect.selectedOptions[0].text.trim()
+                  : null;
 
-                // Extragem elementele vizibile de tip bilă/număr din zona Winning numbers
-                const candidateNumbers = [];
-                const numberSelectors = [
-                  ".winning-number",
-                  "[class*=\"winning-number\"]",
-                  "[class*=\"ball\"]",
-                  "[class*=\"number\"]"
-                ];
+                const selectedDateText = dateSelect && dateSelect.selectedOptions[0]
+                  ? dateSelect.selectedOptions[0].text.trim()
+                  : null;
 
-                for (const sel of numberSelectors) {
-                  const nodes = Array.from(host.querySelectorAll(sel));
-                  const nums = nodes
-                    .map((el) => {
-                      const txt = (el.textContent || "").trim();
-                      if (!/^\d{1,2}$/.test(txt)) return null;
-                      return Number(txt);
-                    })
-                    .filter((n) => n !== null && n >= 1 && n <= 50);
+                const firstDateOptionText = dateSelect && dateSelect.options[0]
+                  ? dateSelect.options[0].text.trim()
+                  : null;
 
-                  if (nums.length >= 7) {
-                    return {
-                      nextDraw,
-                      drawDateLabel,
-                      drawDateShort,
-                      numbers: nums.slice(0, 7),
-                      sourceSelector: sel
-                    };
-                  }
-                }
+                const activeDateLabel = selectedDateText || firstDateOptionText || null;
+                const shortDateMatch = activeDateLabel ? activeDateLabel.match(/\b(\d{2}\.\d{2}\.\d{4})\b/) : null;
+                const drawDateShort = shortDateMatch ? shortDateMatch[1] : activeDateLabel;
 
-                // Fallback pe liniile din jurul datei extragerii
-                const afterDateIdx = drawDateLabel
-                  ? searchLines.findIndex((l) => l.includes(drawDateLabel))
-                  : 0;
-                const sliceAfterDate = afterDateIdx !== -1 ? searchLines.slice(afterDateIdx + 1, afterDateIdx + 25) : searchLines.slice(0, 25);
+                // Cautam toate elementele frunza (fara copii) din host care contin doar un numar 1..50
+                const allEls = Array.from(host.querySelectorAll("*"));
+                const leafNumbers = [];
 
-                for (const item of sliceAfterDate) {
-                  if (/^\d{1,2}$/.test(item)) {
-                    const val = Number(item);
-                    if (val >= 1 && val <= 50) {
-                      candidateNumbers.push(val);
+                for (const el of allEls) {
+                  if (el.children.length > 0) continue;
+                  const style = window.getComputedStyle(el);
+                  if (style.display === "none" || style.visibility === "hidden") continue;
+
+                  // Ignoram optiunile din dropdown-uri (anii 2012-2026 si datele)
+                  if (el.closest("select")) continue;
+
+                  const txt = (el.textContent || "").trim();
+                  if (/^([1-9]|[1-4][0-9]|50)$/.test(txt)) {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.width > 0 && rect.height > 0) {
+                      leafNumbers.push({
+                        value: Number(txt),
+                        top: Math.round(rect.top),
+                        left: Math.round(rect.left),
+                        cls: el.className || ""
+                      });
                     }
                   }
-                  if (candidateNumbers.length >= 7) break;
                 }
 
+                // Sortam de sus in jos, apoi de la stanga la dreapta
+                leafNumbers.sort((a, b) => (Math.abs(a.top - b.top) <= 10 ? a.left - b.left : a.top - b.top));
+
                 return {
-                  nextDraw,
-                  drawDateLabel,
+                  nextDrawDate,
+                  selectedYear,
+                  activeDateLabel,
                   drawDateShort,
-                  numbers: candidateNumbers.slice(0, 7),
-                  sourceSelector: "text-fallback"
+                  leafNumbers
                 };
               });
 
               output.fetchedOk = true;
-              output.nextDrawDate = parsed.nextDraw;
-              output.latestDrawDate = parsed.drawDateLabel;
+              output.nextDrawDate = data.nextDrawDate;
+              output.latestDrawDate = data.activeDateLabel;
 
-              if (parsed.numbers && parsed.numbers.length >= 7) {
+              const nums = data.leafNumbers.map((x) => x.value);
+              if (nums.length >= 7) {
                 output.draws.push({
-                  date: parsed.drawDateShort || parsed.drawDateLabel,
-                  dateLabel: parsed.drawDateLabel,
-                  mainNumbers: parsed.numbers.slice(0, 5),
-                  euroNumbers: parsed.numbers.slice(5, 7),
-                  nextDrawDate: parsed.nextDraw
+                  year: data.selectedYear ? Number(data.selectedYear) : null,
+                  date: data.drawDateShort,
+                  dateLabel: data.activeDateLabel,
+                  mainNumbers: nums.slice(0, 5),
+                  euroNumbers: nums.slice(5, 7),
+                  nextDrawDate: data.nextDrawDate
                 });
+              } else {
+                output.debugLeafNumbers = data.leafNumbers.slice(0, 20);
               }
             } catch (err) {
               output.error = err.message;
