@@ -1,10 +1,10 @@
 {
   "source": "https://www.eurojackpot.com/",
-  "updatedAt": "2026-11-25T12:53:01.642Z",
+  "updatedAt": "2026-11-25T13:01:29.347Z",
   "fetchedOk": true,
   "error": null,
   "nextDrawDate": "Friday, 27 November 2026",
-  "latestDrawDate": "Tuesday, 24.11.2026",
+  "latestDrawDate": "24.11.2026",
   "availableYears": [
     2026,
     2025,
@@ -1138,20 +1138,306 @@
       }
     ]
   },
-  "debugApiUrls": [
-    {
-      "status": 200,
-      "contentType": "text/html; charset=utf-8",
-      "url": "https://www.eurojackpot.com/",
-      "preview": "<!DOCTYPE html><html lang=\"de\"><head>\n    <meta charset=\"utf-8\">\n    <title>EUROJACKPOT Zahlen &amp; Quoten - aktuelle Eurolotto Gewinnzahlen</title>\n    <meta name=\"description\" content=\"Du willst wissen wie die aktuellen Eurojackpot Zahlen lauten? Auf der offiziellen Webseite von Eurojackpot erfäh"
-    },
-    {
-      "status": 200,
-      "contentType": "font/ttf",
-      "url": "https://www.eurojackpot.com/Prompt-Regular.cb4e8889c2cdd0aa.ttf",
-      "preview": "\u0000\u0001\u0000\u0000\u0000\u0011\u0001\u0000\u0000\u0004\u0000\u0010GDEF\u0011�\u0013t\u0000\u0002W\\\u0000\u0000\u0000DGPOSYm4�\u0000\u0002W�\u0000\u0000\u001a�GSUB\u001c�\t�\u0000\u0002r�\u0000\u0000\b�OS/2^=��\u0000\u0002\u0005@\u0000\u0000\u0000`cmapC�~�\u0000\u0002\u0005�\u0000\u0000\b@cvt \u000506�\u0000\u0002\u001ax\u0000\u0000\u0000�fpgm?�\u001e�\u0000\u0002\r�\u0000\u0000\u000b�gasp\u0000\u0000\u0000\u0010\u0000\u0002WT\u0000\u0000\u0000\bglyf�\\*�\u0000\u0000\u0001\u001c\u0000\u0001�\u0014head\u0007T�,\u0000\u0001�L\u0000\u0000\u00006hhea\u0006�\u0005y\u0000\u0002\u0005\u001c\u0000\u0000\u0000$hmtx\u0010�CG\u0000\u0001��\u0000\u0000\u000b�loca�lL\u0000\u0001�P\u0000\u0000\u0005�maxp\u0004M\fz\u0000\u0001�0\u0000\u0000\u0000 name2�`�\u0000\u0002\u001b$\u0000\u0000$Tpostk܍A\u0000\u0002?x\u0000\u0000\u0017�prep?�z�\u0000\u0002\u0019�\u0000\u0000\u0000�\u0000\u0002\u0000-\u0000\u0000\u0001�\u0002�\u0000\u0003\u0000\u0007\u0000\b�\u0005"
-    }
-  ],
+  "debugControlsInfo": {
+    "selects": [
+      {
+        "idx": 0,
+        "id": null,
+        "formControlName": "jahr",
+        "optionsCount": 15,
+        "options": [
+          {
+            "value": "2026",
+            "text": "2026"
+          },
+          {
+            "value": "2025",
+            "text": "2025"
+          },
+          {
+            "value": "2024",
+            "text": "2024"
+          },
+          {
+            "value": "2023",
+            "text": "2023"
+          },
+          {
+            "value": "2022",
+            "text": "2022"
+          },
+          {
+            "value": "2021",
+            "text": "2021"
+          },
+          {
+            "value": "2020",
+            "text": "2020"
+          },
+          {
+            "value": "2019",
+            "text": "2019"
+          },
+          {
+            "value": "2018",
+            "text": "2018"
+          },
+          {
+            "value": "2017",
+            "text": "2017"
+          },
+          {
+            "value": "2016",
+            "text": "2016"
+          },
+          {
+            "value": "2015",
+            "text": "2015"
+          },
+          {
+            "value": "2014",
+            "text": "2014"
+          },
+          {
+            "value": "2013",
+            "text": "2013"
+          },
+          {
+            "value": "2012",
+            "text": "2012"
+          }
+        ]
+      },
+      {
+        "idx": 1,
+        "id": null,
+        "formControlName": "datum",
+        "optionsCount": 95,
+        "options": [
+          {
+            "value": "2026-11-24",
+            "text": "Tuesday, 24.11.2026"
+          },
+          {
+            "value": "2026-11-20",
+            "text": "Friday, 20.11.2026"
+          },
+          {
+            "value": "2026-11-17",
+            "text": "Tuesday, 17.11.2026"
+          },
+          {
+            "value": "2026-11-13",
+            "text": "Friday, 13.11.2026"
+          },
+          {
+            "value": "2026-11-10",
+            "text": "Tuesday, 10.11.2026"
+          },
+          {
+            "value": "2026-11-06",
+            "text": "Friday, 06.11.2026"
+          },
+          {
+            "value": "2026-11-03",
+            "text": "Tuesday, 03.11.2026"
+          },
+          {
+            "value": "2026-10-30",
+            "text": "Friday, 30.10.2026"
+          },
+          {
+            "value": "2026-10-27",
+            "text": "Tuesday, 27.10.2026"
+          },
+          {
+            "value": "2026-10-23",
+            "text": "Friday, 23.10.2026"
+          },
+          {
+            "value": "2026-10-20",
+            "text": "Tuesday, 20.10.2026"
+          },
+          {
+            "value": "2026-10-16",
+            "text": "Friday, 16.10.2026"
+          },
+          {
+            "value": "2026-10-13",
+            "text": "Tuesday, 13.10.2026"
+          },
+          {
+            "value": "2026-10-09",
+            "text": "Friday, 09.10.2026"
+          },
+          {
+            "value": "2026-10-06",
+            "text": "Tuesday, 06.10.2026"
+          }
+        ]
+      }
+    ],
+    "buttons": [
+      {
+        "idx": 0,
+        "tag": "button",
+        "text": "Show video",
+        "ariaLabel": null,
+        "className": "btn d-flex align-items-center shadow mx-auto mx-md-0"
+      },
+      {
+        "idx": 1,
+        "tag": "a",
+        "text": "Croatia",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 2,
+        "tag": "a",
+        "text": "Czechia",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 3,
+        "tag": "a",
+        "text": "Denmark",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 4,
+        "tag": "a",
+        "text": "Estonia",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 5,
+        "tag": "a",
+        "text": "Finland",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 6,
+        "tag": "a",
+        "text": "Germany",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 7,
+        "tag": "a",
+        "text": "Greece",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 8,
+        "tag": "a",
+        "text": "Hungary",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 9,
+        "tag": "a",
+        "text": "Iceland",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 10,
+        "tag": "a",
+        "text": "Italy",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 11,
+        "tag": "a",
+        "text": "Latvia",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 12,
+        "tag": "a",
+        "text": "Lithuania",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 13,
+        "tag": "a",
+        "text": "Netherlands",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 14,
+        "tag": "a",
+        "text": "Norway",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 15,
+        "tag": "a",
+        "text": "Poland",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 16,
+        "tag": "a",
+        "text": "Slovakia",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 17,
+        "tag": "a",
+        "text": "Slovenia",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 18,
+        "tag": "a",
+        "text": "Spain",
+        "ariaLabel": null,
+        "className": ""
+      },
+      {
+        "idx": 19,
+        "tag": "a",
+        "text": "Sweden",
+        "ariaLabel": null,
+        "className": ""
+      }
+    ],
+    "inputs": [
+      {
+        "idx": 0,
+        "tag": "select",
+        "type": null,
+        "formControlName": "jahr",
+        "value": "2026",
+        "className": "shadow form-select ng-untouched ng-pristine ng-valid"
+      },
+      {
+        "idx": 1,
+        "tag": "select",
+        "type": null,
+        "formControlName": "datum",
+        "value": "2026-11-24",
+        "className": "shadow form-select ng-untouched ng-pristine ng-valid"
+      }
+    ]
+  },
   "totalDraws": 280,
   "draws": [
     {
