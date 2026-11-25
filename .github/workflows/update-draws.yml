@@ -324,6 +324,55 @@ jobs:
           run();
           '
 
+      - name: Validate draws.json integrity
+        run: |
+          node -e '
+          const fs = require("fs");
+          const data = JSON.parse(fs.readFileSync("draws.json", "utf8"));
+          if (!data || !Array.isArray(data.draws) || data.draws.length === 0) {
+            throw new Error("draws.json has no draws array or is empty");
+          }
+
+          const seenDates = new Set();
+          const byYear = {};
+
+          for (const d of data.draws) {
+            if (!/^\d{2}\.\d{2}\.\d{4}$/.test(String(d.date || ""))) {
+              throw new Error(`Invalid date format: ${d.date}`);
+            }
+            if (seenDates.has(d.date)) {
+              throw new Error(`Duplicate draw date: ${d.date}`);
+            }
+            seenDates.add(d.date);
+
+            const dateYear = Number(d.date.slice(-4));
+            if (Number(d.year) !== dateYear) {
+              throw new Error(`Year mismatch on ${d.date}: year=${d.year}`);
+            }
+
+            if (!Array.isArray(d.mainNumbers) || d.mainNumbers.length !== 5) {
+              throw new Error(`Invalid mainNumbers length on ${d.date}`);
+            }
+            const mainSet = new Set(d.mainNumbers);
+            if (mainSet.size !== 5 || d.mainNumbers.some((n) => !Number.isInteger(n) || n < 1 || n > 50)) {
+              throw new Error(`Invalid mainNumbers values on ${d.date}: ${JSON.stringify(d.mainNumbers)}`);
+            }
+
+            if (!Array.isArray(d.euroNumbers) || d.euroNumbers.length !== 2) {
+              throw new Error(`Invalid euroNumbers length on ${d.date}`);
+            }
+            const euroSet = new Set(d.euroNumbers);
+            if (euroSet.size !== 2 || d.euroNumbers.some((n) => !Number.isInteger(n) || n < 1 || n > 12)) {
+              throw new Error(`Invalid euroNumbers values on ${d.date}: ${JSON.stringify(d.euroNumbers)}`);
+            }
+
+            byYear[d.year] = (byYear[d.year] || 0) + 1;
+          }
+
+          console.log("Validation passed. Total draws:", data.draws.length);
+          console.log("Draws per year:", byYear);
+          '
+
       - name: Clean temporary node files
         run: rm -rf node_modules package.json package-lock.json
 
