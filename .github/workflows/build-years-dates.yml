@@ -1,1 +1,244 @@
 
+name: Build Eurojackpot Years and Dates JSON
+
+on:
+  workflow_dispatch:
+    inputs:
+      years_range:
+        description: "Optional years (e.g. 2012-2015, 2026). Leave empty for all years."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-years-dates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright Chromium
+        run: |
+          npm init -y
+          npm install playwright
+          npx playwright install chromium
+
+      - name: Fetch years and dates into years-dates.json
+        env:
+          YEARS_RANGE: ${{ inputs.years_range }}
+        run: |
+          node -e '
+          const fs = require("fs");
+          const { chromium } = require("playwright");
+
+          function parseDMYToNum(dateStr) {
+            const m = String(dateStr || "").match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+            if (!m) return 0;
+            return Number(`${m[3]}${m[2]}${m[1]}`);
+          }
+
+          function parseRequestedYears(rangeStr, availableYears) {
+            const raw = String(rangeStr || "").trim();
+            if (!raw) return availableYears;
+
+            const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+            const set = new Set();
+
+            for (const part of parts) {
+              const rangeMatch = part.match(/^(\d{4})\s*-\s*(\d{4})$/);
+              if (rangeMatch) {
+                const a = Number(rangeMatch[1]);
+                const b = Number(rangeMatch[2]);
+                const hi = Math.max(a, b);
+                const lo = Math.min(a, b);
+                for (let y = lo; y <= hi; y++) {
+                  set.add(String(y));
+                }
+              } else if (/^\d{4}$/.test(part)) {
+                set.add(part);
+              }
+            }
+
+            const filtered = availableYears.filter((y) => set.has(y.label) || set.has(y.value));
+            return filtered.length > 0
+              ? filtered
+              : Array.from(set).sort((a, b) => Number(a) - Number(b)).map((y) => ({ label: y, value: y }));
+          }
+
+          async function selectYearOption(page, yearOpt) {
+            const sel = page.locator("select[formcontrolname=\"jahr\"]").first();
+            const prevFirstDate = await page.locator("select[formcontrolname=\"datum\"] option").first().textContent().catch(() => "");
+
+            let selected = false;
+            if (yearOpt.value) {
+              selected = await sel.selectOption({ value: yearOpt.value }, { timeout: 6000 }).then(() => true).catch(() => false);
+            }
+            if (!selected && yearOpt.label) {
+              selected = await sel.selectOption({ label: yearOpt.label }, { timeout: 6000 }).then(() => true).catch(() => false);
+            }
+
+            await sel.evaluate((el, opt) => {
+              const target = Array.from(el.options).find(
+                (o) => (opt.value && o.value === opt.value) || (opt.label && (o.textContent || "").trim() === opt.label)
+              );
+              if (target) {
+                el.value = target.value;
+                target.selected = true;
+              } else if (opt.value) {
+                el.value = opt.value;
+              }
+              el.dispatchEvent(new Event("input", { bubbles: true }));
+              el.dispatchEvent(new Event("change", { bubbles: true }));
+            }, yearOpt);
+
+            for (let i = 0; i < 15; i++) {
+              await page.waitForTimeout(200);
+              const curFirstDate = await page.locator("select[formcontrolname=\"datum\"] option").first().textContent().catch(() => "");
+              if (curFirstDate && curFirstDate !== prevFirstDate) {
+                break;
+              }
+            }
+            await page.waitForTimeout(400);
+          }
+
+          async function run() {
+            const url = "https://www.eurojackpot.com/";
+            const yearMap = new Map();
+
+            if (fs.existsSync("years-dates.json")) {
+              try {
+                const existing = JSON.parse(fs.readFileSync("years-dates.json", "utf8"));
+                if (Array.isArray(existing.years)) {
+                  for (const entry of existing.years) {
+                    if (entry && entry.year && Array.isArray(entry.dates)) {
+                      yearMap.set(Number(entry.year), new Set(entry.dates));
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error("Warning reading existing years-dates.json:", e.message);
+              }
+            }
+
+            function saveYearsDatesJson() {
+              const sortedYears = Array.from(yearMap.entries())
+                .sort((a, b) => a[0] - b[0])
+                .map(([year, dateSet]) => ({
+                  year,
+                  dates: Array.from(dateSet).sort((a, b) => parseDMYToNum(a) - parseDMYToNum(b))
+                }));
+
+              fs.writeFileSync("years-dates.json", JSON.stringify({ years: sortedYears }, null, 2), "utf8");
+              return sortedYears;
+            }
+
+            let browser;
+            try {
+              browser = await chromium.launch({
+                headless: true,
+                args: ["--disable-blink-features=AutomationControlled"]
+              });
+              const context = await browser.newContext({
+                userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+                locale: "en-US",
+                viewport: { width: 1280, height: 800 }
+              });
+              const page = await context.newPage();
+
+              await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
+              await page.waitForSelector("select[formcontrolname=\"jahr\"]", { timeout: 30000 });
+              await page.waitForTimeout(1500);
+
+              const cookieButtons = [
+                "button:has-text(\"Accept\")",
+                "button:has-text(\"Agree\")",
+                "button:has-text(\"Akzeptieren\")",
+                "button:has-text(\"Alle akzeptieren\")"
+              ];
+              for (const sel of cookieButtons) {
+                const btn = page.locator(sel).first();
+                if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
+                  await btn.click({ force: true }).catch(() => {});
+                  await page.waitForTimeout(1000);
+                  break;
+                }
+              }
+
+              const yearOptions = await page.locator("select[formcontrolname=\"jahr\"] option").evaluateAll((opts) =>
+                opts
+                  .map((o) => ({
+                    value: (o.value || "").trim(),
+                    label: (o.textContent || "").trim()
+                  }))
+                  .filter((o) => /^\d{4}$/.test(o.label) || /^\d{4}$/.test(o.value))
+                  .sort((a, b) => Number(a.label || a.value) - Number(b.label || b.value))
+              );
+
+              const yearsToProcess = parseRequestedYears(process.env.YEARS_RANGE, yearOptions);
+              console.log("Years to scan:", yearsToProcess.map((y) => y.label || y.value).join(", "));
+
+              for (const yrOpt of yearsToProcess) {
+                const yrNum = Number(yrOpt.label || yrOpt.value);
+                await selectYearOption(page, yrOpt);
+
+                const rawDates = await page.locator("select[formcontrolname=\"datum\"] option").evaluateAll((opts) =>
+                  opts
+                    .map((o) => {
+                      const txt = (o.textContent || "").trim();
+                      const m = txt.match(/\b(\d{2}\.\d{2}\.\d{4})\b/);
+                      if (m) return m[1];
+                      const iso = String(o.value || "").trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                      if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
+                      return null;
+                    })
+                    .filter(Boolean)
+                );
+
+                const set = yearMap.get(yrNum) || new Set();
+                for (const dt of rawDates) {
+                  set.add(dt);
+                }
+                yearMap.set(yrNum, set);
+
+                saveYearsDatesJson();
+                console.log(`Year ${yrNum}: ${set.size} dates recorded.`);
+              }
+            } catch (err) {
+              console.error("Fatal error:", err.message);
+              process.exitCode = 1;
+            } finally {
+              if (browser) {
+                await browser.close();
+              }
+            }
+
+            const finalYears = saveYearsDatesJson();
+            const totalDates = finalYears.reduce((acc, y) => acc + y.dates.length, 0);
+            console.log(`Done. Years count: ${finalYears.length}, Total dates: ${totalDates}`);
+          }
+
+          run();
+          '
+
+      - name: Clean temporary node files
+        run: rm -rf node_modules package.json package-lock.json
+
+      - name: Commit and push years-dates.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add years-dates.json
+          if git diff --staged --quiet; then
+            echo "No changes in years-dates.json"
+          else
+            git commit -m "Update Eurojackpot years-dates.json"
+            git push
+          fi
