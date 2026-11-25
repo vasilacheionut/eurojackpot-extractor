@@ -26,14 +26,14 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Extract Eurojackpot draws history across dates and years
+      - name: Extract Eurojackpot draws history across all years
         run: |
           node -e '
           const fs = require("fs");
           const { chromium } = require("playwright");
 
-          const MAX_DRAWS_PER_RUN = 80;
-          const MAX_YEARS_PER_RUN = 3;
+          const MAX_DRAWS_PER_RUN = 250;
+          const MAX_YEARS_PER_RUN = 20;
 
           async function run() {
             const url = "https://www.eurojackpot.com/";
@@ -248,7 +248,7 @@ jobs:
                   await page.selectOption("select[formcontrolname=\"datum\"]", { index: opt.index }).catch(() => {});
 
                   for (let step = 0; step < 12; step++) {
-                    await page.waitForTimeout(300);
+                    await page.waitForTimeout(250);
                     const check = await readCurrentDraw();
                     if (JSON.stringify(check.mainNumbers) !== prevSignature) {
                       break;
@@ -283,7 +283,7 @@ jobs:
                   await page.selectOption("select[formcontrolname=\"jahr\"]", { index: yOpt.index }).catch(() => {});
 
                   for (let step = 0; step < 15; step++) {
-                    await page.waitForTimeout(300);
+                    await page.waitForTimeout(250);
                     const check = await readCurrentDraw();
                     if (check.selectedYear && check.selectedYear !== prevYear) {
                       break;
