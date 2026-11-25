@@ -26,7 +26,7 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Catalog years (2012-2026) and dates per year, then extract draws
+      - name: Inspect dropdown controls and catalog years/dates
         run: |
           node -e '
           const fs = require("fs");
@@ -69,6 +69,7 @@ jobs:
               latestDrawDate: prevJson.latestDrawDate || null,
               availableYears: [],
               datesByYear: {},
+              debugControls: [],
               totalDraws: 0,
               draws: []
             };
@@ -104,8 +105,7 @@ jobs:
                 }
               }
 
-              await page.waitForSelector("select[formcontrolname=\"datum\"]", { timeout: 25000 }).catch(() => {});
-              await page.waitForTimeout(1500);
+              await page.waitForTimeout(2000);
 
               async function readPageState() {
                 return await page.evaluate(() => {
@@ -114,34 +114,65 @@ jobs:
                   const nextDateEl = host.querySelector(".next-win-date");
                   const nextDrawDate = nextDateEl ? nextDateEl.textContent.replace(/\s+/g, " ").trim() : "";
 
-                  const yearSelect = host.querySelector("select[formcontrolname=\"jahr\"]");
-                  const dateSelect = host.querySelector("select[formcontrolname=\"datum\"]");
+                  const allSelects = Array.from(document.querySelectorAll("select")).map((s, idx) => ({
+                    idx,
+                    tag: s.tagName,
+                    id: s.id || null,
+                    name: s.getAttribute("name"),
+                    formControlName: s.getAttribute("formcontrolname"),
+                    ariaLabel: s.getAttribute("aria-label"),
+                    className: s.className || "",
+                    options: Array.from(s.options).map((o, oIdx) => ({
+                      index: oIdx,
+                      value: o.value,
+                      text: (o.text || "").trim()
+                    }))
+                  }));
 
-                  const selectedYear = yearSelect && yearSelect.selectedOptions[0]
-                    ? yearSelect.selectedOptions[0].text.trim()
+                  const roleComboboxes = Array.from(document.querySelectorAll("[role=\"combobox\"], [role=\"listbox\"], button[aria-haspopup]")).map((el, idx) => ({
+                    idx,
+                    tag: el.tagName,
+                    role: el.getAttribute("role"),
+                    ariaLabel: el.getAttribute("aria-label"),
+                    text: (el.innerText || el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 120)
+                  }));
+
+                  let yearSelectEl = null;
+                  let dateSelectEl = null;
+
+                  for (const s of Array.from(document.querySelectorAll("select"))) {
+                    const opts = Array.from(s.options).map((o) => (o.text || "").trim());
+                    const hasYears = opts.some((t) => /^20(1[2-9]|2[0-6])$/.test(t));
+                    const hasDates = opts.some((t) => /\b\d{2}\.\d{2}\.20(1[2-9]|2[0-6])\b/.test(t));
+                    if (hasYears && !yearSelectEl) yearSelectEl = s;
+                    if (hasDates && !dateSelectEl) dateSelectEl = s;
+                  }
+
+                  const selectedYear = yearSelectEl && yearSelectEl.selectedOptions[0]
+                    ? yearSelectEl.selectedOptions[0].text.trim()
                     : null;
 
-                  const yearOptions = yearSelect
-                    ? Array.from(yearSelect.options).map((o, idx) => ({
+                  const yearOptions = yearSelectEl
+                    ? Array.from(yearSelectEl.options).map((o, idx) => ({
                         index: idx,
                         value: o.value,
                         label: o.text.trim()
                       }))
                     : [];
 
-                  const selectedDateLabel = dateSelect && dateSelect.selectedOptions[0]
-                    ? dateSelect.selectedOptions[0].text.trim()
+                  const selectedDateLabel = dateSelectEl && dateSelectEl.selectedOptions[0]
+                    ? dateSelectEl.selectedOptions[0].text.trim()
                     : null;
 
-                  const dateOptions = dateSelect
-                    ? Array.from(dateSelect.options).map((o, idx) => ({
+                  const dateOptions = dateSelectEl
+                    ? Array.from(dateSelectEl.options).map((o, idx) => ({
                         index: idx,
                         value: o.value,
                         label: o.text.trim()
                       }))
                     : [];
 
-                  const dateRect = dateSelect ? dateSelect.getBoundingClientRect() : { bottom: 0 };
+                  const dateRect = dateSelectEl ? dateSelectEl.getBoundingClientRect() : { bottom: 0 };
                   const allEls = Array.from(host.querySelectorAll("*"));
 
                   let lowerBoundTop = Infinity;
@@ -206,17 +237,30 @@ jobs:
                     drawDate,
                     dateOptions,
                     mainNumbers,
-                    euroNumbers
+                    euroNumbers,
+                    debugControls: {
+                      selectCount: allSelects.length,
+                      selects: allSelects.map((s) => ({
+                        idx: s.idx,
+                        id: s.id,
+                        name: s.name,
+                        formControlName: s.formControlName,
+                        ariaLabel: s.ariaLabel,
+                        optionsCount: s.options.length,
+                        sampleOptions: s.options.slice(0, 5)
+                      })),
+                      roleComboboxes
+                    }
                   };
                 });
               }
 
               const initial = await readPageState();
               output.fetchedOk = true;
+              output.debugControls = initial.debugControls;
               if (initial.nextDrawDate) output.nextDrawDate = initial.nextDrawDate;
               if (initial.selectedDateLabel) output.latestDrawDate = initial.selectedDateLabel;
 
-              // PASUL 1: Extragem lista anilor (2012..2026) si toate optiunile de data pentru fiecare an
               const yearEntries = (initial.yearOptions || [])
                 .map((y) => ({ ...y, yearNum: Number(y.label.trim()) }))
                 .filter((y) => !Number.isNaN(y.yearNum) && y.yearNum >= 2012 && y.yearNum <= 2026)
@@ -225,12 +269,13 @@ jobs:
               output.availableYears = yearEntries.map((y) => y.yearNum);
 
               const datesByYear = {};
-              const hasYearSelect = await page.locator("select[formcontrolname=\"jahr\"]").count().then((c) => c > 0);
+              const yearSelectLocator = page.locator("select").filter({ hasText: /2026|2025|2024/ }).first();
+              const hasYearSelect = await yearSelectLocator.count().then((c) => c > 0);
 
               for (const yEntry of yearEntries) {
                 const yKey = String(yEntry.yearNum);
                 if (hasYearSelect && (await readPageState()).selectedYear !== yEntry.label.trim()) {
-                  await page.selectOption("select[formcontrolname=\"jahr\"]", { index: yEntry.index }).catch(() => {});
+                  await yearSelectLocator.selectOption({ index: yEntry.index }).catch(() => {});
                   for (let step = 0; step < 25; step++) {
                     await page.waitForTimeout(250);
                     const check = await readPageState();
@@ -253,7 +298,6 @@ jobs:
 
               output.datesByYear = datesByYear;
 
-              // PASUL 2: Parcurgem pe rand fiecare an si extragem extragerile lipsa
               const collectedMap = new Map();
 
               function addDraw(d) {
@@ -284,7 +328,8 @@ jobs:
               }
 
               let addedThisRun = 0;
-              const hasDateSelect = await page.locator("select[formcontrolname=\"datum\"]").count().then((c) => c > 0);
+              const dateSelectLocator = page.locator("select").filter({ hasText: /\d{2}\.\d{2}\.\d{4}/ }).first();
+              const hasDateSelect = await dateSelectLocator.count().then((c) => c > 0);
 
               for (const yEntry of yearEntries) {
                 if (addedThisRun >= MAX_NEW_DRAWS_PER_RUN) break;
@@ -295,7 +340,7 @@ jobs:
                 if (!hasMissingInYear) continue;
 
                 if (hasYearSelect && (await readPageState()).selectedYear !== yEntry.label.trim()) {
-                  await page.selectOption("select[formcontrolname=\"jahr\"]", { index: yEntry.index }).catch(() => {});
+                  await yearSelectLocator.selectOption({ index: yEntry.index }).catch(() => {});
                   for (let step = 0; step < 25; step++) {
                     await page.waitForTimeout(250);
                     const check = await readPageState();
@@ -327,7 +372,7 @@ jobs:
                   if (!opt.date || collectedMap.has(opt.date)) continue;
 
                   const prevSig = JSON.stringify((await readPageState()).mainNumbers);
-                  await page.selectOption("select[formcontrolname=\"datum\"]", { index: opt.index }).catch(() => {});
+                  await dateSelectLocator.selectOption({ index: opt.index }).catch(() => {});
 
                   for (let step = 0; step < 12; step++) {
                     await page.waitForTimeout(200);
