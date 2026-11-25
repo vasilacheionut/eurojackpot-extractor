@@ -1,0 +1,25 @@
+{
+  "name": "Eurojackpot — Extrageri & Generator",
+  "short_name": "Eurojackpot",
+  "description": "Extrageri Eurojackpot, generator 5/50 + 2/12 și vizualizare JSON.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
