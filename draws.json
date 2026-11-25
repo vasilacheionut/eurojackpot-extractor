@@ -1,11 +1,11 @@
 {
   "source": "https://www.eurojackpot.com/",
-  "updatedAt": "2026-11-25T10:15:56.610Z",
+  "updatedAt": "2026-11-25T10:27:39.342Z",
   "fetchedOk": true,
   "error": null,
-  "nextDrawDate": "",
-  "latestDrawDate": null,
-  "totalDraws": 80,
+  "nextDrawDate": "Friday, 27 November 2026",
+  "latestDrawDate": "Tuesday, 24.11.2026",
+  "totalDraws": 280,
   "draws": [
     {
       "year": 2026,
@@ -1285,6 +1285,3206 @@
       "euroNumbers": [
         5,
         6
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "17.02.2026",
+      "dateLabel": "Tuesday, 17.02.2026",
+      "mainNumbers": [
+        8,
+        23,
+        39,
+        40,
+        44
+      ],
+      "euroNumbers": [
+        6,
+        7
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "13.02.2026",
+      "dateLabel": "Friday, 13.02.2026",
+      "mainNumbers": [
+        1,
+        21,
+        44,
+        45,
+        46
+      ],
+      "euroNumbers": [
+        2,
+        7
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "10.02.2026",
+      "dateLabel": "Tuesday, 10.02.2026",
+      "mainNumbers": [
+        12,
+        19,
+        34,
+        39,
+        47
+      ],
+      "euroNumbers": [
+        4,
+        5
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "06.02.2026",
+      "dateLabel": "Friday, 06.02.2026",
+      "mainNumbers": [
+        8,
+        14,
+        38,
+        41,
+        48
+      ],
+      "euroNumbers": [
+        1,
+        11
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "03.02.2026",
+      "dateLabel": "Tuesday, 03.02.2026",
+      "mainNumbers": [
+        3,
+        20,
+        27,
+        37,
+        44
+      ],
+      "euroNumbers": [
+        1,
+        2
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "30.01.2026",
+      "dateLabel": "Friday, 30.01.2026",
+      "mainNumbers": [
+        8,
+        13,
+        15,
+        17,
+        37
+      ],
+      "euroNumbers": [
+        3,
+        7
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "27.01.2026",
+      "dateLabel": "Tuesday, 27.01.2026",
+      "mainNumbers": [
+        13,
+        18,
+        19,
+        29,
+        32
+      ],
+      "euroNumbers": [
+        8,
+        9
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "23.01.2026",
+      "dateLabel": "Friday, 23.01.2026",
+      "mainNumbers": [
+        18,
+        36,
+        39,
+        45,
+        50
+      ],
+      "euroNumbers": [
+        6,
+        9
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "20.01.2026",
+      "dateLabel": "Tuesday, 20.01.2026",
+      "mainNumbers": [
+        16,
+        26,
+        32,
+        37,
+        45
+      ],
+      "euroNumbers": [
+        2,
+        3
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "16.01.2026",
+      "dateLabel": "Friday, 16.01.2026",
+      "mainNumbers": [
+        8,
+        16,
+        37,
+        39,
+        48
+      ],
+      "euroNumbers": [
+        5,
+        11
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "13.01.2026",
+      "dateLabel": "Tuesday, 13.01.2026",
+      "mainNumbers": [
+        2,
+        16,
+        27,
+        33,
+        47
+      ],
+      "euroNumbers": [
+        6,
+        12
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "09.01.2026",
+      "dateLabel": "Friday, 09.01.2026",
+      "mainNumbers": [
+        1,
+        17,
+        19,
+        25,
+        41
+      ],
+      "euroNumbers": [
+        6,
+        12
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "06.01.2026",
+      "dateLabel": "Tuesday, 06.01.2026",
+      "mainNumbers": [
+        21,
+        23,
+        30,
+        33,
+        38
+      ],
+      "euroNumbers": [
+        8,
+        12
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "02.01.2026",
+      "dateLabel": "Friday, 02.01.2026",
+      "mainNumbers": [
+        10,
+        15,
+        29,
+        34,
+        38
+      ],
+      "euroNumbers": [
+        2,
+        9
+      ]
+    },
+    {
+      "year": 2026,
+      "date": "30.12.2025",
+      "dateLabel": "Tuesday, 30.12.2025",
+      "mainNumbers": [
+        10,
+        18,
+        20,
+        23,
+        27
+      ],
+      "euroNumbers": [
+        1,
+        6
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "26.12.2025",
+      "dateLabel": "Friday, 26.12.2025",
+      "mainNumbers": [
+        15,
+        21,
+        26,
+        29,
+        42
+      ],
+      "euroNumbers": [
+        4,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "23.12.2025",
+      "dateLabel": "Tuesday, 23.12.2025",
+      "mainNumbers": [
+        24,
+        29,
+        35,
+        40,
+        41
+      ],
+      "euroNumbers": [
+        6,
+        7
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "19.12.2025",
+      "dateLabel": "Friday, 19.12.2025",
+      "mainNumbers": [
+        8,
+        9,
+        15,
+        35,
+        45
+      ],
+      "euroNumbers": [
+        2,
+        5
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "16.12.2025",
+      "dateLabel": "Tuesday, 16.12.2025",
+      "mainNumbers": [
+        12,
+        22,
+        28,
+        30,
+        31
+      ],
+      "euroNumbers": [
+        4,
+        11
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "12.12.2025",
+      "dateLabel": "Friday, 12.12.2025",
+      "mainNumbers": [
+        2,
+        25,
+        27,
+        37,
+        50
+      ],
+      "euroNumbers": [
+        2,
+        11
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "09.12.2025",
+      "dateLabel": "Tuesday, 09.12.2025",
+      "mainNumbers": [
+        2,
+        30,
+        32,
+        33,
+        37
+      ],
+      "euroNumbers": [
+        2,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "05.12.2025",
+      "dateLabel": "Friday, 05.12.2025",
+      "mainNumbers": [
+        1,
+        4,
+        18,
+        22,
+        24
+      ],
+      "euroNumbers": [
+        6,
+        10
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "02.12.2025",
+      "dateLabel": "Tuesday, 02.12.2025",
+      "mainNumbers": [
+        14,
+        30,
+        34,
+        35,
+        40
+      ],
+      "euroNumbers": [
+        4,
+        6
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "28.11.2025",
+      "dateLabel": "Friday, 28.11.2025",
+      "mainNumbers": [
+        12,
+        16,
+        35,
+        46,
+        50
+      ],
+      "euroNumbers": [
+        3,
+        5
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "25.11.2025",
+      "dateLabel": "Tuesday, 25.11.2025",
+      "mainNumbers": [
+        1,
+        23,
+        30,
+        35,
+        46
+      ],
+      "euroNumbers": [
+        4,
+        8
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "21.11.2025",
+      "dateLabel": "Friday, 21.11.2025",
+      "mainNumbers": [
+        15,
+        24,
+        30,
+        45,
+        50
+      ],
+      "euroNumbers": [
+        5,
+        6
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "18.11.2025",
+      "dateLabel": "Tuesday, 18.11.2025",
+      "mainNumbers": [
+        19,
+        25,
+        27,
+        41,
+        49
+      ],
+      "euroNumbers": [
+        3,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "14.11.2025",
+      "dateLabel": "Friday, 14.11.2025",
+      "mainNumbers": [
+        3,
+        5,
+        20,
+        30,
+        37
+      ],
+      "euroNumbers": [
+        6,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "11.11.2025",
+      "dateLabel": "Tuesday, 11.11.2025",
+      "mainNumbers": [
+        8,
+        24,
+        25,
+        41,
+        50
+      ],
+      "euroNumbers": [
+        8,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "07.11.2025",
+      "dateLabel": "Friday, 07.11.2025",
+      "mainNumbers": [
+        13,
+        19,
+        22,
+        35,
+        40
+      ],
+      "euroNumbers": [
+        2,
+        8
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "04.11.2025",
+      "dateLabel": "Tuesday, 04.11.2025",
+      "mainNumbers": [
+        3,
+        21,
+        22,
+        33,
+        39
+      ],
+      "euroNumbers": [
+        1,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "31.10.2025",
+      "dateLabel": "Friday, 31.10.2025",
+      "mainNumbers": [
+        5,
+        11,
+        40,
+        41,
+        47
+      ],
+      "euroNumbers": [
+        1,
+        5
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "28.10.2025",
+      "dateLabel": "Tuesday, 28.10.2025",
+      "mainNumbers": [
+        3,
+        4,
+        22,
+        45,
+        50
+      ],
+      "euroNumbers": [
+        9,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "24.10.2025",
+      "dateLabel": "Friday, 24.10.2025",
+      "mainNumbers": [
+        12,
+        13,
+        27,
+        42,
+        43
+      ],
+      "euroNumbers": [
+        3,
+        4
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "21.10.2025",
+      "dateLabel": "Tuesday, 21.10.2025",
+      "mainNumbers": [
+        6,
+        21,
+        30,
+        40,
+        46
+      ],
+      "euroNumbers": [
+        3,
+        4
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "17.10.2025",
+      "dateLabel": "Friday, 17.10.2025",
+      "mainNumbers": [
+        18,
+        21,
+        34,
+        35,
+        46
+      ],
+      "euroNumbers": [
+        2,
+        3
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "14.10.2025",
+      "dateLabel": "Tuesday, 14.10.2025",
+      "mainNumbers": [
+        8,
+        12,
+        13,
+        49,
+        50
+      ],
+      "euroNumbers": [
+        2,
+        4
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "10.10.2025",
+      "dateLabel": "Friday, 10.10.2025",
+      "mainNumbers": [
+        4,
+        5,
+        24,
+        31,
+        41
+      ],
+      "euroNumbers": [
+        3,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "07.10.2025",
+      "dateLabel": "Tuesday, 07.10.2025",
+      "mainNumbers": [
+        10,
+        22,
+        38,
+        42,
+        48
+      ],
+      "euroNumbers": [
+        2,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "03.10.2025",
+      "dateLabel": "Friday, 03.10.2025",
+      "mainNumbers": [
+        1,
+        2,
+        7,
+        21,
+        27
+      ],
+      "euroNumbers": [
+        8,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "30.09.2025",
+      "dateLabel": "Tuesday, 30.09.2025",
+      "mainNumbers": [
+        8,
+        11,
+        13,
+        24,
+        27
+      ],
+      "euroNumbers": [
+        3,
+        7
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "26.09.2025",
+      "dateLabel": "Friday, 26.09.2025",
+      "mainNumbers": [
+        12,
+        24,
+        26,
+        35,
+        48
+      ],
+      "euroNumbers": [
+        1,
+        2
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "23.09.2025",
+      "dateLabel": "Tuesday, 23.09.2025",
+      "mainNumbers": [
+        7,
+        18,
+        31,
+        32,
+        33
+      ],
+      "euroNumbers": [
+        10,
+        11
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "19.09.2025",
+      "dateLabel": "Friday, 19.09.2025",
+      "mainNumbers": [
+        9,
+        37,
+        40,
+        41,
+        46
+      ],
+      "euroNumbers": [
+        1,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "16.09.2025",
+      "dateLabel": "Tuesday, 16.09.2025",
+      "mainNumbers": [
+        8,
+        9,
+        14,
+        37,
+        39
+      ],
+      "euroNumbers": [
+        1,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "12.09.2025",
+      "dateLabel": "Friday, 12.09.2025",
+      "mainNumbers": [
+        7,
+        22,
+        24,
+        33,
+        45
+      ],
+      "euroNumbers": [
+        4,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "09.09.2025",
+      "dateLabel": "Tuesday, 09.09.2025",
+      "mainNumbers": [
+        14,
+        18,
+        24,
+        27,
+        50
+      ],
+      "euroNumbers": [
+        8,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "05.09.2025",
+      "dateLabel": "Friday, 05.09.2025",
+      "mainNumbers": [
+        6,
+        14,
+        25,
+        29,
+        46
+      ],
+      "euroNumbers": [
+        7,
+        11
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "02.09.2025",
+      "dateLabel": "Tuesday, 02.09.2025",
+      "mainNumbers": [
+        1,
+        5,
+        12,
+        38,
+        47
+      ],
+      "euroNumbers": [
+        7,
+        8
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "29.08.2025",
+      "dateLabel": "Friday, 29.08.2025",
+      "mainNumbers": [
+        3,
+        5,
+        19,
+        23,
+        48
+      ],
+      "euroNumbers": [
+        1,
+        5
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "26.08.2025",
+      "dateLabel": "Tuesday, 26.08.2025",
+      "mainNumbers": [
+        8,
+        14,
+        21,
+        26,
+        35
+      ],
+      "euroNumbers": [
+        4,
+        8
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "22.08.2025",
+      "dateLabel": "Friday, 22.08.2025",
+      "mainNumbers": [
+        3,
+        14,
+        16,
+        22,
+        34
+      ],
+      "euroNumbers": [
+        7,
+        10
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "19.08.2025",
+      "dateLabel": "Tuesday, 19.08.2025",
+      "mainNumbers": [
+        3,
+        4,
+        11,
+        33,
+        47
+      ],
+      "euroNumbers": [
+        6,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "15.08.2025",
+      "dateLabel": "Friday, 15.08.2025",
+      "mainNumbers": [
+        5,
+        11,
+        20,
+        33,
+        43
+      ],
+      "euroNumbers": [
+        6,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "12.08.2025",
+      "dateLabel": "Tuesday, 12.08.2025",
+      "mainNumbers": [
+        11,
+        16,
+        29,
+        37,
+        42
+      ],
+      "euroNumbers": [
+        1,
+        11
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "08.08.2025",
+      "dateLabel": "Friday, 08.08.2025",
+      "mainNumbers": [
+        7,
+        16,
+        23,
+        41,
+        42
+      ],
+      "euroNumbers": [
+        1,
+        4
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "05.08.2025",
+      "dateLabel": "Tuesday, 05.08.2025",
+      "mainNumbers": [
+        1,
+        18,
+        21,
+        22,
+        34
+      ],
+      "euroNumbers": [
+        1,
+        6
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "01.08.2025",
+      "dateLabel": "Friday, 01.08.2025",
+      "mainNumbers": [
+        4,
+        11,
+        12,
+        20,
+        33
+      ],
+      "euroNumbers": [
+        3,
+        5
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "29.07.2025",
+      "dateLabel": "Tuesday, 29.07.2025",
+      "mainNumbers": [
+        20,
+        21,
+        38,
+        43,
+        49
+      ],
+      "euroNumbers": [
+        6,
+        11
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "25.07.2025",
+      "dateLabel": "Friday, 25.07.2025",
+      "mainNumbers": [
+        7,
+        8,
+        13,
+        29,
+        36
+      ],
+      "euroNumbers": [
+        4,
+        8
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "22.07.2025",
+      "dateLabel": "Tuesday, 22.07.2025",
+      "mainNumbers": [
+        5,
+        20,
+        42,
+        46,
+        48
+      ],
+      "euroNumbers": [
+        7,
+        8
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "18.07.2025",
+      "dateLabel": "Friday, 18.07.2025",
+      "mainNumbers": [
+        10,
+        12,
+        21,
+        25,
+        39
+      ],
+      "euroNumbers": [
+        2,
+        4
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "15.07.2025",
+      "dateLabel": "Tuesday, 15.07.2025",
+      "mainNumbers": [
+        13,
+        28,
+        33,
+        37,
+        45
+      ],
+      "euroNumbers": [
+        6,
+        11
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "11.07.2025",
+      "dateLabel": "Friday, 11.07.2025",
+      "mainNumbers": [
+        6,
+        12,
+        13,
+        43,
+        46
+      ],
+      "euroNumbers": [
+        6,
+        11
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "08.07.2025",
+      "dateLabel": "Tuesday, 08.07.2025",
+      "mainNumbers": [
+        21,
+        27,
+        29,
+        34,
+        43
+      ],
+      "euroNumbers": [
+        6,
+        10
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "04.07.2025",
+      "dateLabel": "Friday, 04.07.2025",
+      "mainNumbers": [
+        14,
+        23,
+        34,
+        41,
+        44
+      ],
+      "euroNumbers": [
+        5,
+        10
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "01.07.2025",
+      "dateLabel": "Tuesday, 01.07.2025",
+      "mainNumbers": [
+        1,
+        9,
+        10,
+        12,
+        14
+      ],
+      "euroNumbers": [
+        6,
+        8
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "27.06.2025",
+      "dateLabel": "Friday, 27.06.2025",
+      "mainNumbers": [
+        4,
+        14,
+        26,
+        29,
+        50
+      ],
+      "euroNumbers": [
+        3,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "24.06.2025",
+      "dateLabel": "Tuesday, 24.06.2025",
+      "mainNumbers": [
+        20,
+        31,
+        35,
+        40,
+        44
+      ],
+      "euroNumbers": [
+        3,
+        4
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "20.06.2025",
+      "dateLabel": "Friday, 20.06.2025",
+      "mainNumbers": [
+        6,
+        12,
+        18,
+        37,
+        46
+      ],
+      "euroNumbers": [
+        7,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "17.06.2025",
+      "dateLabel": "Tuesday, 17.06.2025",
+      "mainNumbers": [
+        10,
+        13,
+        15,
+        33,
+        35
+      ],
+      "euroNumbers": [
+        7,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "13.06.2025",
+      "dateLabel": "Friday, 13.06.2025",
+      "mainNumbers": [
+        1,
+        15,
+        18,
+        27,
+        46
+      ],
+      "euroNumbers": [
+        5,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "10.06.2025",
+      "dateLabel": "Tuesday, 10.06.2025",
+      "mainNumbers": [
+        1,
+        17,
+        20,
+        28,
+        42
+      ],
+      "euroNumbers": [
+        2,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "06.06.2025",
+      "dateLabel": "Friday, 06.06.2025",
+      "mainNumbers": [
+        7,
+        8,
+        11,
+        23,
+        39
+      ],
+      "euroNumbers": [
+        5,
+        11
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "03.06.2025",
+      "dateLabel": "Tuesday, 03.06.2025",
+      "mainNumbers": [
+        6,
+        8,
+        19,
+        26,
+        30
+      ],
+      "euroNumbers": [
+        1,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "30.05.2025",
+      "dateLabel": "Friday, 30.05.2025",
+      "mainNumbers": [
+        4,
+        5,
+        26,
+        29,
+        43
+      ],
+      "euroNumbers": [
+        5,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "27.05.2025",
+      "dateLabel": "Tuesday, 27.05.2025",
+      "mainNumbers": [
+        6,
+        9,
+        17,
+        25,
+        41
+      ],
+      "euroNumbers": [
+        4,
+        10
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "23.05.2025",
+      "dateLabel": "Friday, 23.05.2025",
+      "mainNumbers": [
+        11,
+        17,
+        19,
+        33,
+        40
+      ],
+      "euroNumbers": [
+        7,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "20.05.2025",
+      "dateLabel": "Tuesday, 20.05.2025",
+      "mainNumbers": [
+        8,
+        19,
+        20,
+        21,
+        28
+      ],
+      "euroNumbers": [
+        7,
+        10
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "16.05.2025",
+      "dateLabel": "Friday, 16.05.2025",
+      "mainNumbers": [
+        6,
+        8,
+        15,
+        27,
+        39
+      ],
+      "euroNumbers": [
+        6,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "13.05.2025",
+      "dateLabel": "Tuesday, 13.05.2025",
+      "mainNumbers": [
+        14,
+        16,
+        19,
+        33,
+        34
+      ],
+      "euroNumbers": [
+        5,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "09.05.2025",
+      "dateLabel": "Friday, 09.05.2025",
+      "mainNumbers": [
+        1,
+        5,
+        27,
+        36,
+        43
+      ],
+      "euroNumbers": [
+        5,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "06.05.2025",
+      "dateLabel": "Tuesday, 06.05.2025",
+      "mainNumbers": [
+        1,
+        21,
+        22,
+        46,
+        49
+      ],
+      "euroNumbers": [
+        9,
+        10
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "02.05.2025",
+      "dateLabel": "Friday, 02.05.2025",
+      "mainNumbers": [
+        3,
+        15,
+        22,
+        33,
+        35
+      ],
+      "euroNumbers": [
+        1,
+        7
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "29.04.2025",
+      "dateLabel": "Tuesday, 29.04.2025",
+      "mainNumbers": [
+        17,
+        21,
+        27,
+        30,
+        34
+      ],
+      "euroNumbers": [
+        8,
+        11
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "25.04.2025",
+      "dateLabel": "Friday, 25.04.2025",
+      "mainNumbers": [
+        13,
+        14,
+        40,
+        43,
+        45
+      ],
+      "euroNumbers": [
+        5,
+        8
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "22.04.2025",
+      "dateLabel": "Tuesday, 22.04.2025",
+      "mainNumbers": [
+        10,
+        16,
+        23,
+        29,
+        38
+      ],
+      "euroNumbers": [
+        3,
+        5
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "18.04.2025",
+      "dateLabel": "Friday, 18.04.2025",
+      "mainNumbers": [
+        7,
+        8,
+        12,
+        29,
+        44
+      ],
+      "euroNumbers": [
+        3,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "15.04.2025",
+      "dateLabel": "Tuesday, 15.04.2025",
+      "mainNumbers": [
+        8,
+        11,
+        13,
+        33,
+        35
+      ],
+      "euroNumbers": [
+        1,
+        10
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "11.04.2025",
+      "dateLabel": "Friday, 11.04.2025",
+      "mainNumbers": [
+        2,
+        26,
+        27,
+        28,
+        49
+      ],
+      "euroNumbers": [
+        1,
+        10
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "08.04.2025",
+      "dateLabel": "Tuesday, 08.04.2025",
+      "mainNumbers": [
+        17,
+        39,
+        40,
+        41,
+        47
+      ],
+      "euroNumbers": [
+        5,
+        8
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "04.04.2025",
+      "dateLabel": "Friday, 04.04.2025",
+      "mainNumbers": [
+        19,
+        23,
+        29,
+        37,
+        38
+      ],
+      "euroNumbers": [
+        2,
+        8
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "01.04.2025",
+      "dateLabel": "Tuesday, 01.04.2025",
+      "mainNumbers": [
+        12,
+        17,
+        39,
+        41,
+        50
+      ],
+      "euroNumbers": [
+        9,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "28.03.2025",
+      "dateLabel": "Friday, 28.03.2025",
+      "mainNumbers": [
+        2,
+        15,
+        19,
+        34,
+        49
+      ],
+      "euroNumbers": [
+        2,
+        6
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "25.03.2025",
+      "dateLabel": "Tuesday, 25.03.2025",
+      "mainNumbers": [
+        3,
+        11,
+        30,
+        35,
+        50
+      ],
+      "euroNumbers": [
+        4,
+        5
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "21.03.2025",
+      "dateLabel": "Friday, 21.03.2025",
+      "mainNumbers": [
+        8,
+        9,
+        12,
+        14,
+        16
+      ],
+      "euroNumbers": [
+        6,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "18.03.2025",
+      "dateLabel": "Tuesday, 18.03.2025",
+      "mainNumbers": [
+        1,
+        7,
+        14,
+        47,
+        50
+      ],
+      "euroNumbers": [
+        3,
+        7
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "14.03.2025",
+      "dateLabel": "Friday, 14.03.2025",
+      "mainNumbers": [
+        6,
+        13,
+        28,
+        37,
+        45
+      ],
+      "euroNumbers": [
+        5,
+        10
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "11.03.2025",
+      "dateLabel": "Tuesday, 11.03.2025",
+      "mainNumbers": [
+        15,
+        18,
+        22,
+        23,
+        44
+      ],
+      "euroNumbers": [
+        1,
+        11
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "07.03.2025",
+      "dateLabel": "Friday, 07.03.2025",
+      "mainNumbers": [
+        7,
+        11,
+        12,
+        32,
+        42
+      ],
+      "euroNumbers": [
+        1,
+        4
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "04.03.2025",
+      "dateLabel": "Tuesday, 04.03.2025",
+      "mainNumbers": [
+        4,
+        12,
+        35,
+        37,
+        48
+      ],
+      "euroNumbers": [
+        4,
+        10
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "28.02.2025",
+      "dateLabel": "Friday, 28.02.2025",
+      "mainNumbers": [
+        3,
+        4,
+        13,
+        20,
+        21
+      ],
+      "euroNumbers": [
+        8,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "25.02.2025",
+      "dateLabel": "Tuesday, 25.02.2025",
+      "mainNumbers": [
+        28,
+        31,
+        38,
+        42,
+        48
+      ],
+      "euroNumbers": [
+        3,
+        10
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "21.02.2025",
+      "dateLabel": "Friday, 21.02.2025",
+      "mainNumbers": [
+        18,
+        26,
+        29,
+        35,
+        36
+      ],
+      "euroNumbers": [
+        11,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "18.02.2025",
+      "dateLabel": "Tuesday, 18.02.2025",
+      "mainNumbers": [
+        1,
+        9,
+        14,
+        19,
+        44
+      ],
+      "euroNumbers": [
+        2,
+        3
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "14.02.2025",
+      "dateLabel": "Friday, 14.02.2025",
+      "mainNumbers": [
+        12,
+        14,
+        18,
+        45,
+        50
+      ],
+      "euroNumbers": [
+        2,
+        10
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "11.02.2025",
+      "dateLabel": "Tuesday, 11.02.2025",
+      "mainNumbers": [
+        3,
+        12,
+        22,
+        28,
+        47
+      ],
+      "euroNumbers": [
+        1,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "07.02.2025",
+      "dateLabel": "Friday, 07.02.2025",
+      "mainNumbers": [
+        15,
+        17,
+        27,
+        33,
+        45
+      ],
+      "euroNumbers": [
+        5,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "04.02.2025",
+      "dateLabel": "Tuesday, 04.02.2025",
+      "mainNumbers": [
+        10,
+        18,
+        21,
+        41,
+        42
+      ],
+      "euroNumbers": [
+        3,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "31.01.2025",
+      "dateLabel": "Friday, 31.01.2025",
+      "mainNumbers": [
+        1,
+        23,
+        32,
+        42,
+        47
+      ],
+      "euroNumbers": [
+        4,
+        11
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "28.01.2025",
+      "dateLabel": "Tuesday, 28.01.2025",
+      "mainNumbers": [
+        2,
+        7,
+        28,
+        43,
+        46
+      ],
+      "euroNumbers": [
+        5,
+        12
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "24.01.2025",
+      "dateLabel": "Friday, 24.01.2025",
+      "mainNumbers": [
+        2,
+        9,
+        16,
+        46,
+        47
+      ],
+      "euroNumbers": [
+        3,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "21.01.2025",
+      "dateLabel": "Tuesday, 21.01.2025",
+      "mainNumbers": [
+        3,
+        17,
+        22,
+        28,
+        40
+      ],
+      "euroNumbers": [
+        4,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "17.01.2025",
+      "dateLabel": "Friday, 17.01.2025",
+      "mainNumbers": [
+        7,
+        9,
+        14,
+        18,
+        31
+      ],
+      "euroNumbers": [
+        7,
+        8
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "14.01.2025",
+      "dateLabel": "Tuesday, 14.01.2025",
+      "mainNumbers": [
+        10,
+        11,
+        17,
+        20,
+        30
+      ],
+      "euroNumbers": [
+        2,
+        6
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "10.01.2025",
+      "dateLabel": "Friday, 10.01.2025",
+      "mainNumbers": [
+        17,
+        34,
+        38,
+        42,
+        48
+      ],
+      "euroNumbers": [
+        2,
+        11
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "07.01.2025",
+      "dateLabel": "Tuesday, 07.01.2025",
+      "mainNumbers": [
+        1,
+        16,
+        20,
+        23,
+        44
+      ],
+      "euroNumbers": [
+        5,
+        9
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "03.01.2025",
+      "dateLabel": "Friday, 03.01.2025",
+      "mainNumbers": [
+        1,
+        20,
+        21,
+        27,
+        29
+      ],
+      "euroNumbers": [
+        8,
+        10
+      ]
+    },
+    {
+      "year": 2025,
+      "date": "31.12.2024",
+      "dateLabel": "Tuesday, 31.12.2024",
+      "mainNumbers": [
+        2,
+        21,
+        26,
+        34,
+        49
+      ],
+      "euroNumbers": [
+        7,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "27.12.2024",
+      "dateLabel": "Friday, 27.12.2024",
+      "mainNumbers": [
+        1,
+        9,
+        25,
+        27,
+        37
+      ],
+      "euroNumbers": [
+        6,
+        8
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "24.12.2024",
+      "dateLabel": "Tuesday, 24.12.2024",
+      "mainNumbers": [
+        9,
+        15,
+        28,
+        36,
+        39
+      ],
+      "euroNumbers": [
+        6,
+        7
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "20.12.2024",
+      "dateLabel": "Friday, 20.12.2024",
+      "mainNumbers": [
+        1,
+        3,
+        10,
+        32,
+        44
+      ],
+      "euroNumbers": [
+        1,
+        8
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "17.12.2024",
+      "dateLabel": "Tuesday, 17.12.2024",
+      "mainNumbers": [
+        11,
+        14,
+        18,
+        35,
+        42
+      ],
+      "euroNumbers": [
+        4,
+        11
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "13.12.2024",
+      "dateLabel": "Friday, 13.12.2024",
+      "mainNumbers": [
+        1,
+        4,
+        19,
+        35,
+        42
+      ],
+      "euroNumbers": [
+        1,
+        3
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "10.12.2024",
+      "dateLabel": "Tuesday, 10.12.2024",
+      "mainNumbers": [
+        17,
+        23,
+        30,
+        41,
+        43
+      ],
+      "euroNumbers": [
+        4,
+        11
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "06.12.2024",
+      "dateLabel": "Friday, 06.12.2024",
+      "mainNumbers": [
+        8,
+        14,
+        45,
+        47,
+        50
+      ],
+      "euroNumbers": [
+        2,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "03.12.2024",
+      "dateLabel": "Tuesday, 03.12.2024",
+      "mainNumbers": [
+        7,
+        20,
+        23,
+        24,
+        37
+      ],
+      "euroNumbers": [
+        4,
+        10
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "29.11.2024",
+      "dateLabel": "Friday, 29.11.2024",
+      "mainNumbers": [
+        10,
+        19,
+        24,
+        25,
+        40
+      ],
+      "euroNumbers": [
+        5,
+        9
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "26.11.2024",
+      "dateLabel": "Tuesday, 26.11.2024",
+      "mainNumbers": [
+        20,
+        21,
+        28,
+        32,
+        37
+      ],
+      "euroNumbers": [
+        1,
+        5
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "22.11.2024",
+      "dateLabel": "Friday, 22.11.2024",
+      "mainNumbers": [
+        6,
+        10,
+        30,
+        34,
+        41
+      ],
+      "euroNumbers": [
+        7,
+        10
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "19.11.2024",
+      "dateLabel": "Tuesday, 19.11.2024",
+      "mainNumbers": [
+        4,
+        7,
+        19,
+        26,
+        27
+      ],
+      "euroNumbers": [
+        4,
+        5
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "15.11.2024",
+      "dateLabel": "Friday, 15.11.2024",
+      "mainNumbers": [
+        27,
+        31,
+        35,
+        46,
+        50
+      ],
+      "euroNumbers": [
+        3,
+        10
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "12.11.2024",
+      "dateLabel": "Tuesday, 12.11.2024",
+      "mainNumbers": [
+        2,
+        3,
+        34,
+        38,
+        49
+      ],
+      "euroNumbers": [
+        10,
+        11
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "08.11.2024",
+      "dateLabel": "Friday, 08.11.2024",
+      "mainNumbers": [
+        6,
+        23,
+        38,
+        42,
+        45
+      ],
+      "euroNumbers": [
+        9,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "05.11.2024",
+      "dateLabel": "Tuesday, 05.11.2024",
+      "mainNumbers": [
+        22,
+        29,
+        36,
+        38,
+        43
+      ],
+      "euroNumbers": [
+        1,
+        6
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "01.11.2024",
+      "dateLabel": "Friday, 01.11.2024",
+      "mainNumbers": [
+        13,
+        21,
+        27,
+        28,
+        41
+      ],
+      "euroNumbers": [
+        1,
+        3
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "29.10.2024",
+      "dateLabel": "Tuesday, 29.10.2024",
+      "mainNumbers": [
+        3,
+        17,
+        26,
+        30,
+        49
+      ],
+      "euroNumbers": [
+        1,
+        10
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "25.10.2024",
+      "dateLabel": "Friday, 25.10.2024",
+      "mainNumbers": [
+        2,
+        19,
+        36,
+        42,
+        50
+      ],
+      "euroNumbers": [
+        4,
+        9
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "22.10.2024",
+      "dateLabel": "Tuesday, 22.10.2024",
+      "mainNumbers": [
+        4,
+        32,
+        36,
+        38,
+        47
+      ],
+      "euroNumbers": [
+        3,
+        9
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "18.10.2024",
+      "dateLabel": "Friday, 18.10.2024",
+      "mainNumbers": [
+        2,
+        4,
+        23,
+        30,
+        40
+      ],
+      "euroNumbers": [
+        4,
+        10
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "15.10.2024",
+      "dateLabel": "Tuesday, 15.10.2024",
+      "mainNumbers": [
+        9,
+        20,
+        38,
+        44,
+        45
+      ],
+      "euroNumbers": [
+        4,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "11.10.2024",
+      "dateLabel": "Friday, 11.10.2024",
+      "mainNumbers": [
+        8,
+        11,
+        23,
+        44,
+        45
+      ],
+      "euroNumbers": [
+        10,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "08.10.2024",
+      "dateLabel": "Tuesday, 08.10.2024",
+      "mainNumbers": [
+        13,
+        29,
+        42,
+        44,
+        48
+      ],
+      "euroNumbers": [
+        2,
+        8
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "04.10.2024",
+      "dateLabel": "Friday, 04.10.2024",
+      "mainNumbers": [
+        4,
+        16,
+        27,
+        34,
+        44
+      ],
+      "euroNumbers": [
+        4,
+        7
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "01.10.2024",
+      "dateLabel": "Tuesday, 01.10.2024",
+      "mainNumbers": [
+        17,
+        37,
+        42,
+        45,
+        50
+      ],
+      "euroNumbers": [
+        6,
+        7
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "27.09.2024",
+      "dateLabel": "Friday, 27.09.2024",
+      "mainNumbers": [
+        6,
+        15,
+        25,
+        29,
+        41
+      ],
+      "euroNumbers": [
+        1,
+        3
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "24.09.2024",
+      "dateLabel": "Tuesday, 24.09.2024",
+      "mainNumbers": [
+        3,
+        13,
+        34,
+        41,
+        43
+      ],
+      "euroNumbers": [
+        1,
+        5
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "20.09.2024",
+      "dateLabel": "Friday, 20.09.2024",
+      "mainNumbers": [
+        9,
+        17,
+        19,
+        26,
+        39
+      ],
+      "euroNumbers": [
+        4,
+        10
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "17.09.2024",
+      "dateLabel": "Tuesday, 17.09.2024",
+      "mainNumbers": [
+        1,
+        3,
+        13,
+        24,
+        44
+      ],
+      "euroNumbers": [
+        11,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "13.09.2024",
+      "dateLabel": "Friday, 13.09.2024",
+      "mainNumbers": [
+        2,
+        3,
+        17,
+        40,
+        44
+      ],
+      "euroNumbers": [
+        4,
+        8
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "10.09.2024",
+      "dateLabel": "Tuesday, 10.09.2024",
+      "mainNumbers": [
+        7,
+        10,
+        31,
+        41,
+        46
+      ],
+      "euroNumbers": [
+        1,
+        5
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "06.09.2024",
+      "dateLabel": "Friday, 06.09.2024",
+      "mainNumbers": [
+        7,
+        11,
+        27,
+        42,
+        45
+      ],
+      "euroNumbers": [
+        3,
+        10
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "03.09.2024",
+      "dateLabel": "Tuesday, 03.09.2024",
+      "mainNumbers": [
+        5,
+        17,
+        23,
+        36,
+        37
+      ],
+      "euroNumbers": [
+        5,
+        9
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "30.08.2024",
+      "dateLabel": "Friday, 30.08.2024",
+      "mainNumbers": [
+        8,
+        11,
+        25,
+        31,
+        48
+      ],
+      "euroNumbers": [
+        11,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "27.08.2024",
+      "dateLabel": "Tuesday, 27.08.2024",
+      "mainNumbers": [
+        15,
+        24,
+        29,
+        33,
+        39
+      ],
+      "euroNumbers": [
+        2,
+        9
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "23.08.2024",
+      "dateLabel": "Friday, 23.08.2024",
+      "mainNumbers": [
+        13,
+        21,
+        22,
+        26,
+        48
+      ],
+      "euroNumbers": [
+        2,
+        7
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "20.08.2024",
+      "dateLabel": "Tuesday, 20.08.2024",
+      "mainNumbers": [
+        25,
+        28,
+        29,
+        31,
+        33
+      ],
+      "euroNumbers": [
+        6,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "16.08.2024",
+      "dateLabel": "Friday, 16.08.2024",
+      "mainNumbers": [
+        4,
+        11,
+        16,
+        46,
+        50
+      ],
+      "euroNumbers": [
+        1,
+        3
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "13.08.2024",
+      "dateLabel": "Tuesday, 13.08.2024",
+      "mainNumbers": [
+        6,
+        9,
+        33,
+        34,
+        50
+      ],
+      "euroNumbers": [
+        1,
+        7
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "09.08.2024",
+      "dateLabel": "Friday, 09.08.2024",
+      "mainNumbers": [
+        15,
+        18,
+        25,
+        29,
+        35
+      ],
+      "euroNumbers": [
+        1,
+        5
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "06.08.2024",
+      "dateLabel": "Tuesday, 06.08.2024",
+      "mainNumbers": [
+        4,
+        9,
+        22,
+        32,
+        35
+      ],
+      "euroNumbers": [
+        9,
+        10
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "02.08.2024",
+      "dateLabel": "Friday, 02.08.2024",
+      "mainNumbers": [
+        14,
+        20,
+        26,
+        30,
+        31
+      ],
+      "euroNumbers": [
+        1,
+        2
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "30.07.2024",
+      "dateLabel": "Tuesday, 30.07.2024",
+      "mainNumbers": [
+        2,
+        16,
+        30,
+        31,
+        49
+      ],
+      "euroNumbers": [
+        2,
+        5
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "26.07.2024",
+      "dateLabel": "Friday, 26.07.2024",
+      "mainNumbers": [
+        7,
+        11,
+        22,
+        26,
+        46
+      ],
+      "euroNumbers": [
+        5,
+        11
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "23.07.2024",
+      "dateLabel": "Tuesday, 23.07.2024",
+      "mainNumbers": [
+        9,
+        13,
+        21,
+        24,
+        38
+      ],
+      "euroNumbers": [
+        6,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "19.07.2024",
+      "dateLabel": "Friday, 19.07.2024",
+      "mainNumbers": [
+        13,
+        18,
+        22,
+        26,
+        32
+      ],
+      "euroNumbers": [
+        10,
+        11
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "16.07.2024",
+      "dateLabel": "Tuesday, 16.07.2024",
+      "mainNumbers": [
+        8,
+        22,
+        27,
+        36,
+        43
+      ],
+      "euroNumbers": [
+        5,
+        8
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "12.07.2024",
+      "dateLabel": "Friday, 12.07.2024",
+      "mainNumbers": [
+        2,
+        14,
+        30,
+        32,
+        34
+      ],
+      "euroNumbers": [
+        3,
+        4
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "09.07.2024",
+      "dateLabel": "Tuesday, 09.07.2024",
+      "mainNumbers": [
+        5,
+        14,
+        25,
+        26,
+        44
+      ],
+      "euroNumbers": [
+        8,
+        10
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "05.07.2024",
+      "dateLabel": "Friday, 05.07.2024",
+      "mainNumbers": [
+        4,
+        11,
+        16,
+        25,
+        32
+      ],
+      "euroNumbers": [
+        1,
+        11
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "02.07.2024",
+      "dateLabel": "Tuesday, 02.07.2024",
+      "mainNumbers": [
+        10,
+        29,
+        30,
+        32,
+        40
+      ],
+      "euroNumbers": [
+        6,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "28.06.2024",
+      "dateLabel": "Friday, 28.06.2024",
+      "mainNumbers": [
+        1,
+        8,
+        30,
+        43,
+        45
+      ],
+      "euroNumbers": [
+        10,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "25.06.2024",
+      "dateLabel": "Tuesday, 25.06.2024",
+      "mainNumbers": [
+        8,
+        14,
+        25,
+        31,
+        45
+      ],
+      "euroNumbers": [
+        3,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "21.06.2024",
+      "dateLabel": "Friday, 21.06.2024",
+      "mainNumbers": [
+        2,
+        22,
+        24,
+        30,
+        40
+      ],
+      "euroNumbers": [
+        5,
+        6
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "18.06.2024",
+      "dateLabel": "Tuesday, 18.06.2024",
+      "mainNumbers": [
+        4,
+        10,
+        23,
+        24,
+        45
+      ],
+      "euroNumbers": [
+        7,
+        8
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "14.06.2024",
+      "dateLabel": "Friday, 14.06.2024",
+      "mainNumbers": [
+        10,
+        21,
+        27,
+        42,
+        46
+      ],
+      "euroNumbers": [
+        2,
+        6
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "11.06.2024",
+      "dateLabel": "Tuesday, 11.06.2024",
+      "mainNumbers": [
+        4,
+        12,
+        16,
+        29,
+        31
+      ],
+      "euroNumbers": [
+        1,
+        9
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "07.06.2024",
+      "dateLabel": "Friday, 07.06.2024",
+      "mainNumbers": [
+        8,
+        15,
+        29,
+        37,
+        45
+      ],
+      "euroNumbers": [
+        5,
+        10
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "04.06.2024",
+      "dateLabel": "Tuesday, 04.06.2024",
+      "mainNumbers": [
+        1,
+        3,
+        24,
+        43,
+        49
+      ],
+      "euroNumbers": [
+        2,
+        4
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "31.05.2024",
+      "dateLabel": "Friday, 31.05.2024",
+      "mainNumbers": [
+        4,
+        23,
+        34,
+        39,
+        45
+      ],
+      "euroNumbers": [
+        6,
+        7
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "28.05.2024",
+      "dateLabel": "Tuesday, 28.05.2024",
+      "mainNumbers": [
+        13,
+        26,
+        27,
+        35,
+        46
+      ],
+      "euroNumbers": [
+        3,
+        4
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "24.05.2024",
+      "dateLabel": "Friday, 24.05.2024",
+      "mainNumbers": [
+        2,
+        3,
+        4,
+        21,
+        45
+      ],
+      "euroNumbers": [
+        6,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "21.05.2024",
+      "dateLabel": "Tuesday, 21.05.2024",
+      "mainNumbers": [
+        7,
+        23,
+        31,
+        33,
+        38
+      ],
+      "euroNumbers": [
+        10,
+        11
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "17.05.2024",
+      "dateLabel": "Friday, 17.05.2024",
+      "mainNumbers": [
+        1,
+        2,
+        29,
+        36,
+        48
+      ],
+      "euroNumbers": [
+        1,
+        11
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "14.05.2024",
+      "dateLabel": "Tuesday, 14.05.2024",
+      "mainNumbers": [
+        19,
+        22,
+        23,
+        24,
+        27
+      ],
+      "euroNumbers": [
+        1,
+        6
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "10.05.2024",
+      "dateLabel": "Friday, 10.05.2024",
+      "mainNumbers": [
+        28,
+        31,
+        39,
+        45,
+        49
+      ],
+      "euroNumbers": [
+        8,
+        11
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "07.05.2024",
+      "dateLabel": "Tuesday, 07.05.2024",
+      "mainNumbers": [
+        3,
+        11,
+        32,
+        33,
+        35
+      ],
+      "euroNumbers": [
+        3,
+        11
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "03.05.2024",
+      "dateLabel": "Friday, 03.05.2024",
+      "mainNumbers": [
+        9,
+        17,
+        36,
+        40,
+        45
+      ],
+      "euroNumbers": [
+        5,
+        7
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "30.04.2024",
+      "dateLabel": "Tuesday, 30.04.2024",
+      "mainNumbers": [
+        4,
+        20,
+        33,
+        37,
+        45
+      ],
+      "euroNumbers": [
+        8,
+        9
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "26.04.2024",
+      "dateLabel": "Friday, 26.04.2024",
+      "mainNumbers": [
+        3,
+        18,
+        23,
+        29,
+        47
+      ],
+      "euroNumbers": [
+        5,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "23.04.2024",
+      "dateLabel": "Tuesday, 23.04.2024",
+      "mainNumbers": [
+        2,
+        3,
+        6,
+        15,
+        35
+      ],
+      "euroNumbers": [
+        1,
+        3
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "19.04.2024",
+      "dateLabel": "Friday, 19.04.2024",
+      "mainNumbers": [
+        8,
+        14,
+        21,
+        34,
+        36
+      ],
+      "euroNumbers": [
+        1,
+        2
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "16.04.2024",
+      "dateLabel": "Tuesday, 16.04.2024",
+      "mainNumbers": [
+        35,
+        36,
+        37,
+        41,
+        48
+      ],
+      "euroNumbers": [
+        1,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "12.04.2024",
+      "dateLabel": "Friday, 12.04.2024",
+      "mainNumbers": [
+        1,
+        34,
+        39,
+        47,
+        49
+      ],
+      "euroNumbers": [
+        1,
+        12
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "09.04.2024",
+      "dateLabel": "Tuesday, 09.04.2024",
+      "mainNumbers": [
+        1,
+        7,
+        21,
+        27,
+        43
+      ],
+      "euroNumbers": [
+        1,
+        3
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "05.04.2024",
+      "dateLabel": "Friday, 05.04.2024",
+      "mainNumbers": [
+        5,
+        8,
+        16,
+        30,
+        37
+      ],
+      "euroNumbers": [
+        1,
+        10
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "02.04.2024",
+      "dateLabel": "Tuesday, 02.04.2024",
+      "mainNumbers": [
+        14,
+        17,
+        29,
+        32,
+        45
+      ],
+      "euroNumbers": [
+        1,
+        2
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "29.03.2024",
+      "dateLabel": "Friday, 29.03.2024",
+      "mainNumbers": [
+        7,
+        11,
+        30,
+        31,
+        39
+      ],
+      "euroNumbers": [
+        5,
+        10
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "26.03.2024",
+      "dateLabel": "Tuesday, 26.03.2024",
+      "mainNumbers": [
+        12,
+        15,
+        17,
+        30,
+        32
+      ],
+      "euroNumbers": [
+        1,
+        6
+      ]
+    },
+    {
+      "year": 2024,
+      "date": "22.03.2024",
+      "dateLabel": "Friday, 22.03.2024",
+      "mainNumbers": [
+        5,
+        17,
+        36,
+        37,
+        50
+      ],
+      "euroNumbers": [
+        3,
+        7
       ]
     }
   ]
