@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Eurojackpot Auto JSON</title>
+  <title>Eurojackpot — Extrageri & JSON</title>
   <style>
     * {
       box-sizing: border-box;
@@ -23,7 +23,7 @@
 
     .app {
       width: 100%;
-      max-width: 640px;
+      max-width: 720px;
       background-color: #1e293b;
       border: 1px solid #334155;
       border-radius: 16px;
@@ -33,7 +33,7 @@
 
     h1 {
       font-size: 1.3rem;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       text-align: center;
     }
 
@@ -42,6 +42,135 @@
       color: #94a3b8;
       margin-bottom: 14px;
       line-height: 1.5;
+      text-align: center;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      background-color: #0f172a;
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 12px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .tab-btn.active {
+      background-color: #3b82f6;
+      color: #ffffff;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-bar label {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    select {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-size: 0.9rem;
+    }
+
+    .draws-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 460px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .draw-card {
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .draw-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .draw-date {
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: #f8fafc;
+    }
+
+    .draw-year {
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+
+    .balls-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .ball {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      background-color: #334155;
+      color: #f8fafc;
+    }
+
+    .ball.euro {
+      background-color: #eab308;
+      color: #0f172a;
+    }
+
+    .sep {
+      color: #64748b;
+      font-weight: 700;
+      margin: 0 2px;
     }
 
     textarea {
@@ -63,7 +192,7 @@
       margin-top: 14px;
     }
 
-    button {
+    button.action-btn {
       flex: 1;
       padding: 13px;
       border: none;
@@ -89,25 +218,163 @@
       color: #38bdf8;
       min-height: 20px;
     }
+
+    .empty-msg {
+      text-align: center;
+      color: #94a3b8;
+      padding: 24px 12px;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
   <div class="app">
-    <h1>Eurojackpot — JSON Automat</h1>
+    <h1>Eurojackpot — Extrageri & JSON</h1>
     <div class="meta" id="meta-info">Se încarcă draws.json...</div>
-    <textarea id="json-view" readonly></textarea>
+
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab-btn active" id="tab-draws-btn" role="tab" aria-selected="true">
+        Extrageri (2026–2012)
+      </button>
+      <button type="button" class="tab-btn" id="tab-json-btn" role="tab" aria-selected="false">
+        JSON Brut
+      </button>
+    </div>
+
+    <section class="tab-panel active" id="panel-draws" role="tabpanel">
+      <div class="filter-bar">
+        <label for="year-filter">Filtrează după an:</label>
+        <select id="year-filter">
+          <option value="ALL">Toți anii (2026–2012)</option>
+        </select>
+      </div>
+      <div class="draws-list" id="draws-list">
+        <div class="empty-msg">Se încarcă extragerile...</div>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="panel-json" role="tabpanel">
+      <textarea id="json-view" readonly></textarea>
+    </section>
 
     <div class="actions">
-      <button type="button" class="btn-primary" id="reload-btn">Reîncarcă JSON</button>
-      <button type="button" class="btn-secondary" id="copy-btn">Copiază JSON</button>
+      <button type="button" class="action-btn btn-primary" id="reload-btn">Reîncarcă JSON</button>
+      <button type="button" class="action-btn btn-secondary" id="copy-btn">Copiază JSON</button>
     </div>
     <div class="status" id="status-msg"></div>
   </div>
 
   <script>
     (function () {
+      let allDrawsDesc = [];
+
       function setStatus(msg) {
         document.getElementById("status-msg").textContent = msg;
+      }
+
+      function switchTab(tabName) {
+        const isDraws = tabName === "draws";
+        document.getElementById("tab-draws-btn").classList.toggle("active", isDraws);
+        document.getElementById("tab-draws-btn").setAttribute("aria-selected", String(isDraws));
+        document.getElementById("tab-json-btn").classList.toggle("active", !isDraws);
+        document.getElementById("tab-json-btn").setAttribute("aria-selected", String(!isDraws));
+
+        document.getElementById("panel-draws").classList.toggle("active", isDraws);
+        document.getElementById("panel-json").classList.toggle("active", !isDraws);
+      }
+
+      function dateToSortableInt(dateStr) {
+        const m = String(dateStr || "").trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+        if (!m) return 0;
+        return Number(m[3] + m[2] + m[1]);
+      }
+
+      function extractYear(draw) {
+        if (draw && Number.isInteger(Number(draw.year)) && Number(draw.year) > 0) {
+          return Number(draw.year);
+        }
+        const m = String(draw && draw.date ? draw.date : "").trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+        return m ? Number(m[3]) : 0;
+      }
+
+      function normalizeDraws(rawData) {
+        const list = Array.isArray(rawData)
+          ? rawData
+          : Array.isArray(rawData && rawData.draws)
+            ? rawData.draws
+            : [];
+
+        return list
+          .map((item) => ({
+            date: String(item.date || "").trim(),
+            year: extractYear(item),
+            mainNumbers: Array.isArray(item.mainNumbers) ? item.mainNumbers : [],
+            euroNumbers: Array.isArray(item.euroNumbers) ? item.euroNumbers : []
+          }))
+          .filter((item) => item.date.length > 0)
+          .sort((a, b) => dateToSortableInt(b.date) - dateToSortableInt(a.date));
+      }
+
+      function populateYearFilter(draws) {
+        const select = document.getElementById("year-filter");
+        const previousVal = select.value || "ALL";
+        const yearsSet = new Set(draws.map((d) => d.year).filter((y) => y > 0));
+        for (let y = 2026; y >= 2012; y--) {
+          yearsSet.add(y);
+        }
+        const sortedYears = Array.from(yearsSet).sort((a, b) => b - a);
+
+        select.innerHTML = '<option value="ALL">Toți anii (2026–2012)</option>';
+        for (const yr of sortedYears) {
+          const opt = document.createElement("option");
+          opt.value = String(yr);
+          opt.textContent = String(yr);
+          select.appendChild(opt);
+        }
+
+        if (Array.from(select.options).some((o) => o.value === previousVal)) {
+          select.value = previousVal;
+        }
+      }
+
+      function renderDraws() {
+        const container = document.getElementById("draws-list");
+        const selectedYear = document.getElementById("year-filter").value;
+
+        const filtered =
+          selectedYear === "ALL"
+            ? allDrawsDesc
+            : allDrawsDesc.filter((d) => String(d.year) === selectedYear);
+
+        if (!filtered.length) {
+          container.innerHTML = '<div class="empty-msg">Nu există extrageri pentru selecția curentă.</div>';
+          return;
+        }
+
+        container.innerHTML = filtered
+          .map((d) => {
+            const mainHtml = d.mainNumbers
+              .map((n) => `<span class="ball">${n}</span>`)
+              .join("");
+            const euroHtml = d.euroNumbers
+              .map((n) => `<span class="ball euro">${n}</span>`)
+              .join("");
+
+            return `
+              <div class="draw-card">
+                <div class="draw-info">
+                  <span class="draw-date">${d.date}</span>
+                  <span class="draw-year">Anul ${d.year || "-"}</span>
+                </div>
+                <div class="balls-wrap">
+                  ${mainHtml}
+                  <span class="sep">+</span>
+                  ${euroHtml}
+                </div>
+              </div>
+            `;
+          })
+          .join("");
       }
 
       function loadJsonFile() {
@@ -118,24 +385,40 @@
             return res.json();
           })
           .then((data) => {
+            allDrawsDesc = normalizeDraws(data);
+            populateYearFilter(allDrawsDesc);
+            renderDraws();
+
             document.getElementById("json-view").value = JSON.stringify(data, null, 2);
+
+            const latestDate = allDrawsDesc.length ? allDrawsDesc[0].date : "-";
+            const oldestDate = allDrawsDesc.length ? allDrawsDesc[allDrawsDesc.length - 1].date : "-";
+
             document.getElementById("meta-info").innerHTML =
-              "Ultima rulare: <strong>" +
-              (data.updatedAt || "-") +
-              "</strong><br>Data detectată: <strong>" +
-              (data.detectedDate || "nedetectată") +
-              "</strong> | Status fetch: <strong>" +
-              (data.fetchedOk ? "OK" : "Blocat / Eroare") +
-              "</strong>";
+              "Total extrageri: <strong>" +
+              allDrawsDesc.length +
+              "</strong> | Interval: <strong>" +
+              latestDate +
+              " → " +
+              oldestDate +
+              "</strong>" +
+              (data.updatedAt ? "<br>Ultima rulare: <strong>" + data.updatedAt + "</strong>" : "");
+
             setStatus("Datele JSON au fost încărcate.");
           })
           .catch((err) => {
+            document.getElementById("draws-list").innerHTML =
+              '<div class="empty-msg">Nu s-a putut citi draws.json (' + err.message + ').</div>';
             setStatus("Nu s-a putut citi draws.json (" + err.message + "). Rulați întâi workflow-ul.");
           });
       }
 
       function copyJson() {
         const text = document.getElementById("json-view").value;
+        if (!text) {
+          setStatus("Nu există conținut JSON de copiat.");
+          return;
+        }
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard
             .writeText(text)
@@ -145,6 +428,13 @@
       }
 
       document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("tab-draws-btn").addEventListener("click", function () {
+          switchTab("draws");
+        });
+        document.getElementById("tab-json-btn").addEventListener("click", function () {
+          switchTab("json");
+        });
+        document.getElementById("year-filter").addEventListener("change", renderDraws);
         document.getElementById("reload-btn").addEventListener("click", loadJsonFile);
         document.getElementById("copy-btn").addEventListener("click", copyJson);
         loadJsonFile();
