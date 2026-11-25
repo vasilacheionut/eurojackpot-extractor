@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       years_range:
-        description: "Optional years (e.g. 2023-2019, 2026). Leave empty: full history on 1st run, current year after."
+        description: "Optional years (e.g. 2026, 2024-2022). Leave empty: all years on 1st run, current year after."
         required: false
         default: ""
 
@@ -32,7 +32,7 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Fetch Eurojackpot draws
+      - name: Fetch Eurojackpot draws from years-dates.json
         env:
           YEARS_RANGE: ${{ inputs.years_range }}
         run: |
@@ -40,30 +40,72 @@ jobs:
           const fs = require("fs");
           const { chromium } = require("playwright");
 
-          function inferYear(dateStr, fallbackYear) {
-            const m = String(dateStr || "").match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-            if (m) return Number(m[3]);
-            return fallbackYear ? Number(fallbackYear) : null;
-          }
-
           function parseDMYToNum(dateStr) {
             const m = String(dateStr || "").match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
             if (!m) return 0;
             return Number(`${m[3]}${m[2]}${m[1]}`);
           }
 
-          function parseRequestedYears(rangeStr, availableYears, hasExistingDraws) {
+          function inferCalendarYear(dateStr, fallbackYear) {
+            const m = String(dateStr || "").match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+            if (m) return Number(m[3]);
+            return fallbackYear ? Number(fallbackYear) : null;
+          }
+
+          function isValidDraw(d) {
+            if (!d || !/^\d{2}\.\d{2}\.\d{4}$/.test(String(d.date || ""))) return false;
+            const year = inferCalendarYear(d.date, d.year);
+            if (!year) return false;
+            if (!Array.isArray(d.mainNumbers) || d.mainNumbers.length !== 5) return false;
+            if (!Array.isArray(d.euroNumbers) || d.euroNumbers.length !== 2) return false;
+
+            const mainSet = new Set(d.mainNumbers);
+            if (mainSet.size !== 5 || d.mainNumbers.some((n) => !Number.isInteger(n) || n < 1 || n > 50)) {
+              return false;
+            }
+            const euroSet = new Set(d.euroNumbers);
+            if (euroSet.size !== 2 || d.euroNumbers.some((n) => !Number.isInteger(n) || n < 1 || n > 12)) {
+              return false;
+            }
+            return true;
+          }
+
+          function loadYearsDatesMap() {
+            const map = new Map();
+            if (fs.existsSync("years-dates.json")) {
+              const raw = JSON.parse(fs.readFileSync("years-dates.json", "utf8"));
+              if (Array.isArray(raw.years)) {
+                for (const item of raw.years) {
+                  if (item && item.year && Array.isArray(item.dates)) {
+                    map.set(Number(item.year), new Set(item.dates));
+                  }
+                }
+              }
+            }
+            return map;
+          }
+
+          function saveYearsDatesMap(map) {
+            const years = Array.from(map.entries())
+              .sort((a, b) => a[0] - b[0])
+              .map(([year, set]) => ({
+                year,
+                dates: Array.from(set).sort((a, b) => parseDMYToNum(a) - parseDMYToNum(b))
+              }));
+            fs.writeFileSync("years-dates.json", JSON.stringify({ years }, null, 2), "utf8");
+          }
+
+          function parseYearsToRun(rangeStr, allYearsSorted, hasExistingDraws) {
             const raw = String(rangeStr || "").trim();
 
             if (!raw) {
               if (!hasExistingDraws) {
-                console.log("No existing draws found -> running full historical fetch.");
-                return availableYears;
+                console.log("No existing draws found -> running all years from index.");
+                return allYearsSorted;
               }
-              const currentYear = String(new Date().getFullYear());
+              const currentYear = Number(new Date().getFullYear());
               console.log(`Existing draws found -> updating current year (${currentYear}).`);
-              const matched = availableYears.filter((y) => y.label === currentYear || y.value === currentYear);
-              return matched.length > 0 ? matched : [{ label: currentYear, value: currentYear }];
+              return allYearsSorted.includes(currentYear) ? [currentYear] : [currentYear];
             }
 
             const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
@@ -76,168 +118,120 @@ jobs:
                 const b = Number(rangeMatch[2]);
                 const hi = Math.max(a, b);
                 const lo = Math.min(a, b);
-                for (let y = hi; y >= lo; y--) {
-                  set.add(String(y));
-                }
+                for (let y = lo; y <= hi; y++) set.add(y);
               } else if (/^\d{4}$/.test(part)) {
-                set.add(part);
+                set.add(Number(part));
               }
             }
 
-            const filtered = availableYears.filter((y) => set.has(y.label) || set.has(y.value));
-            return filtered.length > 0
-              ? filtered
-              : Array.from(set).sort((a, b) => Number(b) - Number(a)).map((y) => ({ label: y, value: y }));
+            return Array.from(set).sort((a, b) => a - b);
           }
 
-          async function selectYearOption(page, yearOpt) {
-            const sel = page.locator("select[formcontrolname=\"jahr\"]").first();
-            const prevFirstDate = await page.locator("select[formcontrolname=\"datum\"] option").first().textContent().catch(() => "");
-
-            let selected = false;
-            if (yearOpt.value) {
-              selected = await sel.selectOption({ value: yearOpt.value }, { timeout: 6000 }).then(() => true).catch(() => false);
-            }
-            if (!selected && yearOpt.label) {
-              selected = await sel.selectOption({ label: yearOpt.label }, { timeout: 6000 }).then(() => true).catch(() => false);
-            }
-
-            await sel.evaluate((el, opt) => {
-              const target = Array.from(el.options).find(
-                (o) => (opt.value && o.value === opt.value) || (opt.label && (o.textContent || "").trim() === opt.label)
-              );
-              if (target) {
-                el.value = target.value;
-                target.selected = true;
-              } else if (opt.value) {
-                el.value = opt.value;
-              }
-              el.dispatchEvent(new Event("input", { bubbles: true }));
-              el.dispatchEvent(new Event("change", { bubbles: true }));
-            }, yearOpt);
-
-            for (let i = 0; i < 15; i++) {
-              await page.waitForTimeout(200);
-              const curFirstDate = await page.locator("select[formcontrolname=\"datum\"] option").first().textContent().catch(() => "");
-              if (curFirstDate && curFirstDate !== prevFirstDate) {
-                break;
-              }
-            }
-            await page.waitForTimeout(400);
-          }
-
-          async function selectDateOption(page, dateOpt) {
-            const sel = page.locator("select[formcontrolname=\"datum\"]").first();
-            let ok = false;
-            if (dateOpt.value) {
-              ok = await sel.selectOption({ value: dateOpt.value }, { timeout: 4000 }).then(() => true).catch(() => false);
-            }
-            if (!ok && dateOpt.label) {
-              ok = await sel.selectOption({ label: dateOpt.label }, { timeout: 4000 }).then(() => true).catch(() => false);
-            }
-            if (!ok) {
-              await sel.evaluate((el, opt) => {
-                const target = Array.from(el.options).find(
-                  (o) => (opt.value && o.value === opt.value) || (opt.label && (o.textContent || "").trim() === opt.label)
-                );
-                if (target) {
-                  el.value = target.value;
-                  target.selected = true;
-                } else if (opt.value) {
-                  el.value = opt.value;
+          async function selectDropdownByTextOrValue(page, selector, matchers) {
+            const sel = page.locator(selector).first();
+            for (const m of matchers) {
+              if (m.value) {
+                const ok = await sel.selectOption({ value: m.value }, { timeout: 4000 }).then(() => true).catch(() => false);
+                if (ok) {
+                  await sel.evaluate((el) => {
+                    el.dispatchEvent(new Event("input", { bubbles: true }));
+                    el.dispatchEvent(new Event("change", { bubbles: true }));
+                  });
+                  return true;
                 }
-                el.dispatchEvent(new Event("input", { bubbles: true }));
-                el.dispatchEvent(new Event("change", { bubbles: true }));
-              }, dateOpt);
+              }
+              if (m.label) {
+                const ok = await sel.selectOption({ label: m.label }, { timeout: 4000 }).then(() => true).catch(() => false);
+                if (ok) {
+                  await sel.evaluate((el) => {
+                    el.dispatchEvent(new Event("input", { bubbles: true }));
+                    el.dispatchEvent(new Event("change", { bubbles: true }));
+                  });
+                  return true;
+                }
+              }
             }
-            await page.waitForTimeout(180);
+
+            return sel.evaluate((el, list) => {
+              for (const m of list) {
+                const opt = Array.from(el.options).find((o) => {
+                  const val = (o.value || "").trim();
+                  const txt = (o.textContent || "").trim();
+                  return (m.value && val === m.value) ||
+                         (m.label && txt === m.label) ||
+                         (m.contains && txt.includes(m.contains));
+                });
+                if (opt) {
+                  el.value = opt.value;
+                  opt.selected = true;
+                  el.dispatchEvent(new Event("input", { bubbles: true }));
+                  el.dispatchEvent(new Event("change", { bubbles: true }));
+                  return true;
+                }
+              }
+              return false;
+            }, matchers);
           }
 
-          async function readCurrentDraw(page, fallbackYear, fallbackLabel) {
-            return page.evaluate(({ fbYear, fbLabel }) => {
+          async function readWinningNumbers(page) {
+            return page.evaluate(() => {
               const host = document.querySelector("app-winning-numbers") || document.body;
-              const winningEls = Array.from(host.querySelectorAll(".winning-number"));
-              const nums = winningEls
+              const els = Array.from(host.querySelectorAll(".winning-number"));
+              const nums = els
                 .map((el) => Number((el.textContent || "").trim()))
                 .filter((n) => !Number.isNaN(n));
-
-              const datumSelect = document.querySelector("select[formcontrolname=\"datum\"]");
-              let dateStr = null;
-
-              if (datumSelect && datumSelect.selectedOptions && datumSelect.selectedOptions[0]) {
-                const txt = (datumSelect.selectedOptions[0].textContent || "").trim();
-                const m = txt.match(/\b(\d{2}\.\d{2}\.\d{4})\b/);
-                if (m) dateStr = m[1];
-              }
-
-              if (!dateStr && fbLabel) {
-                const m = String(fbLabel).match(/\b(\d{2}\.\d{2}\.\d{4})\b/);
-                if (m) dateStr = m[1];
-              }
-
-              if (!dateStr && datumSelect && datumSelect.value) {
-                const isoMatch = String(datumSelect.value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-                if (isoMatch) {
-                  dateStr = `${isoMatch[3]}.${isoMatch[2]}.${isoMatch[1]}`;
-                }
-              }
-
-              const yearMatch = dateStr ? dateStr.match(/\.(\d{4})$/) : null;
-              const year = yearMatch ? Number(yearMatch[1]) : (fbYear ? Number(fbYear) : null);
-
               return {
-                year,
-                date: dateStr,
                 mainNumbers: nums.slice(0, 5),
                 euroNumbers: nums.slice(5, 7)
               };
-            }, { fbYear: fallbackYear, fbLabel: fallbackLabel });
+            });
           }
 
           async function run() {
-            const url = "https://www.eurojackpot.com/";
-            const collectedMap = new Map();
-
-            function addDraw(d) {
-              if (!d || !Array.isArray(d.mainNumbers) || d.mainNumbers.length !== 5) return false;
-              if (!Array.isArray(d.euroNumbers) || d.euroNumbers.length !== 2) return false;
-              if (!d.date) return false;
-              const year = inferYear(d.date, d.year);
-              if (!year) return false;
-              collectedMap.set(d.date, {
-                year,
-                date: d.date,
-                mainNumbers: d.mainNumbers,
-                euroNumbers: d.euroNumbers
-              });
-              return true;
+            const yearsMap = loadYearsDatesMap();
+            if (yearsMap.size === 0) {
+              throw new Error("years-dates.json is missing or empty. Run build-years-dates workflow first.");
             }
 
-            function saveCleanJson() {
-              const draws = Array.from(collectedMap.values()).sort(
+            const drawsMap = new Map();
+            if (fs.existsSync("draws.json")) {
+              try {
+                const prev = JSON.parse(fs.readFileSync("draws.json", "utf8"));
+                if (Array.isArray(prev.draws)) {
+                  for (const item of prev.draws) {
+                    if (isValidDraw(item)) {
+                      drawsMap.set(item.date, {
+                        year: inferCalendarYear(item.date, item.year),
+                        date: item.date,
+                        mainNumbers: item.mainNumbers,
+                        euroNumbers: item.euroNumbers
+                      });
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error("Warning reading draws.json:", e.message);
+              }
+            }
+
+            const hasExistingDraws = drawsMap.size > 0;
+            console.log("Loaded valid existing draws:", drawsMap.size);
+
+            function saveDrawsJson() {
+              const draws = Array.from(drawsMap.values()).sort(
                 (a, b) => parseDMYToNum(b.date) - parseDMYToNum(a.date)
               );
               fs.writeFileSync("draws.json", JSON.stringify({ draws }, null, 2), "utf8");
               return draws.length;
             }
 
-            try {
-              if (fs.existsSync("draws.json")) {
-                const prev = JSON.parse(fs.readFileSync("draws.json", "utf8"));
-                if (Array.isArray(prev.draws)) {
-                  for (const item of prev.draws) {
-                    addDraw(item);
-                  }
-                }
-              }
-            } catch (e) {
-              console.error("Warning reading existing draws.json:", e.message);
-            }
+            const allYearsSorted = Array.from(yearsMap.keys()).sort((a, b) => a - b);
+            const yearsToProcess = parseYearsToRun(process.env.YEARS_RANGE, allYearsSorted, hasExistingDraws);
+            console.log("Years to process:", yearsToProcess.join(", "));
 
-            const hasExistingDraws = collectedMap.size > 0;
-            console.log("Initial draws loaded:", collectedMap.size);
-
+            const currentCalendarYear = Number(new Date().getFullYear());
             let browser;
+
             try {
               browser = await chromium.launch({
                 headless: true,
@@ -250,7 +244,7 @@ jobs:
               });
               const page = await context.newPage();
 
-              await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
+              await page.goto("https://www.eurojackpot.com/", { waitUntil: "domcontentloaded", timeout: 45000 });
               await page.waitForSelector("select[formcontrolname=\"jahr\"]", { timeout: 30000 });
               await page.waitForTimeout(1500);
 
@@ -269,55 +263,93 @@ jobs:
                 }
               }
 
-              const yearOptions = await page.locator("select[formcontrolname=\"jahr\"] option").evaluateAll((opts) =>
-                opts
-                  .map((o) => ({
-                    value: (o.value || "").trim(),
-                    label: (o.textContent || "").trim()
-                  }))
-                  .filter((o) => /^\d{4}$/.test(o.label) || /^\d{4}$/.test(o.value))
-              );
+              let lastNumbersKey = "";
 
-              const fallbackList = Array.from({ length: 15 }, (_, i) => ({
-                label: String(2026 - i),
-                value: String(2026 - i)
-              }));
-              const baseYears = yearOptions.length > 0 ? yearOptions : fallbackList;
-              const yearsToProcess = parseRequestedYears(process.env.YEARS_RANGE, baseYears, hasExistingDraws);
-              console.log("Years to process:", yearsToProcess.map((y) => y.label || y.value).join(", "));
+              for (const yr of yearsToProcess) {
+                const okYear = await selectDropdownByTextOrValue(page, "select[formcontrolname=\"jahr\"]", [
+                  { value: String(yr), label: String(yr), contains: String(yr) }
+                ]);
+                if (!okYear) {
+                  console.error(`Could not select year ${yr} on site.`);
+                  continue;
+                }
+                await page.waitForTimeout(500);
 
-              for (const yrOpt of yearsToProcess) {
-                const yrLabel = yrOpt.label || yrOpt.value;
-                try {
-                  await selectYearOption(page, yrOpt);
+                const dateSet = yearsMap.get(yr) || new Set();
 
-                  const dateOptions = await page.locator("select[formcontrolname=\"datum\"] option").evaluateAll((opts) =>
+                // If running current year, also sync any newly added dates from site dropdown
+                if (yr === currentCalendarYear) {
+                  const siteDates = await page.locator("select[formcontrolname=\"datum\"] option").evaluateAll((opts) =>
                     opts
-                      .map((o) => ({
-                        value: (o.value || "").trim(),
-                        label: (o.textContent || "").trim()
-                      }))
-                      .filter((o) => o.value.length > 0 || o.label.length > 0)
+                      .map((o) => {
+                        const txt = (o.textContent || "").trim();
+                        const m = txt.match(/\b(\d{2}\.\d{2}\.\d{4})\b/);
+                        if (m) return m[1];
+                        const iso = String(o.value || "").trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                        if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
+                        return null;
+                      })
+                      .filter(Boolean)
                   );
+                  for (const sd of siteDates) {
+                    dateSet.add(sd);
+                  }
+                  yearsMap.set(yr, dateSet);
+                  saveYearsDatesMap(yearsMap);
+                }
 
-                  let addedThisYear = 0;
-                  for (const dOpt of dateOptions) {
-                    try {
-                      await selectDateOption(page, dOpt);
-                      const draw = await readCurrentDraw(page, Number(yrLabel), dOpt.label);
-                      if (addDraw(draw)) {
-                        addedThisYear++;
-                      }
-                    } catch (dateErr) {
-                      console.error(`Error on year ${yrLabel}, date ${dOpt.label || dOpt.value}:`, dateErr.message);
+                const orderedDates = Array.from(dateSet).sort((a, b) => parseDMYToNum(a) - parseDMYToNum(b));
+                let fetchedCount = 0;
+                let skippedCount = 0;
+
+                for (const dt of orderedDates) {
+                  if (drawsMap.has(dt) && yr !== currentCalendarYear) {
+                    skippedCount++;
+                    continue;
+                  }
+
+                  const [dd, mm, yyyy] = dt.split(".");
+                  const isoVal = `${yyyy}-${mm}-${dd}`;
+                  const okDate = await selectDropdownByTextOrValue(page, "select[formcontrolname=\"datum\"]", [
+                    { value: isoVal, label: dt, contains: dt }
+                  ]);
+                  if (!okDate) {
+                    console.error(`Could not select date ${dt} in year ${yr}.`);
+                    continue;
+                  }
+
+                  let parsed = null;
+                  for (let attempt = 0; attempt < 12; attempt++) {
+                    await page.waitForTimeout(150);
+                    const cur = await readWinningNumbers(page);
+                    const key = `${cur.mainNumbers.join(",")}|${cur.euroNumbers.join(",")}`;
+                    if (cur.mainNumbers.length === 5 && cur.euroNumbers.length === 2 && key !== lastNumbersKey) {
+                      lastNumbersKey = key;
+                      parsed = cur;
+                      break;
+                    }
+                    if (attempt >= 5 && cur.mainNumbers.length === 5 && cur.euroNumbers.length === 2) {
+                      parsed = cur;
+                      break;
                     }
                   }
 
-                  const totalNow = saveCleanJson();
-                  console.log(`Year ${yrLabel}: ${dateOptions.length} dates found, ${addedThisYear} parsed, total saved: ${totalNow}`);
-                } catch (yrErr) {
-                  console.error(`Error processing year ${yrLabel}:`, yrErr.message);
+                  if (parsed) {
+                    const candidate = {
+                      year: inferCalendarYear(dt, yr),
+                      date: dt,
+                      mainNumbers: parsed.mainNumbers,
+                      euroNumbers: parsed.euroNumbers
+                    };
+                    if (isValidDraw(candidate)) {
+                      drawsMap.set(dt, candidate);
+                      fetchedCount++;
+                    }
+                  }
                 }
+
+                const savedTotal = saveDrawsJson();
+                console.log(`Year ${yr}: fetched=${fetchedCount}, skipped=${skippedCount}, total draws=${savedTotal}`);
               }
             } catch (err) {
               console.error("Fatal error:", err.message);
@@ -328,8 +360,8 @@ jobs:
               }
             }
 
-            const finalTotal = saveCleanJson();
-            console.log("Final total draws in draws.json:", finalTotal);
+            const finalCount = saveDrawsJson();
+            console.log("Final draws count:", finalCount);
           }
 
           run();
@@ -341,7 +373,7 @@ jobs:
           const fs = require("fs");
           const data = JSON.parse(fs.readFileSync("draws.json", "utf8"));
           if (!data || !Array.isArray(data.draws) || data.draws.length === 0) {
-            throw new Error("draws.json has no draws array or is empty");
+            throw new Error("draws.json is empty or missing draws array");
           }
 
           const seenDates = new Set();
@@ -352,29 +384,29 @@ jobs:
               throw new Error(`Invalid date format: ${d.date}`);
             }
             if (seenDates.has(d.date)) {
-              throw new Error(`Duplicate draw date: ${d.date}`);
+              throw new Error(`Duplicate date: ${d.date}`);
             }
             seenDates.add(d.date);
 
-            const dateYear = Number(d.date.slice(-4));
-            if (Number(d.year) !== dateYear) {
+            const calYear = Number(d.date.slice(-4));
+            if (Number(d.year) !== calYear) {
               throw new Error(`Year mismatch on ${d.date}: year=${d.year}`);
             }
 
             if (!Array.isArray(d.mainNumbers) || d.mainNumbers.length !== 5) {
-              throw new Error(`Invalid mainNumbers length on ${d.date}`);
+              throw new Error(`Invalid mainNumbers on ${d.date}`);
             }
             const mainSet = new Set(d.mainNumbers);
             if (mainSet.size !== 5 || d.mainNumbers.some((n) => !Number.isInteger(n) || n < 1 || n > 50)) {
-              throw new Error(`Invalid mainNumbers values on ${d.date}: ${JSON.stringify(d.mainNumbers)}`);
+              throw new Error(`Out of range/duplicate mainNumbers on ${d.date}`);
             }
 
             if (!Array.isArray(d.euroNumbers) || d.euroNumbers.length !== 2) {
-              throw new Error(`Invalid euroNumbers length on ${d.date}`);
+              throw new Error(`Invalid euroNumbers on ${d.date}`);
             }
             const euroSet = new Set(d.euroNumbers);
             if (euroSet.size !== 2 || d.euroNumbers.some((n) => !Number.isInteger(n) || n < 1 || n > 12)) {
-              throw new Error(`Invalid euroNumbers values on ${d.date}: ${JSON.stringify(d.euroNumbers)}`);
+              throw new Error(`Out of range/duplicate euroNumbers on ${d.date}`);
             }
 
             byYear[d.year] = (byYear[d.year] || 0) + 1;
@@ -387,13 +419,13 @@ jobs:
       - name: Clean temporary node files
         run: rm -rf node_modules package.json package-lock.json
 
-      - name: Commit and push draws.json
+      - name: Commit and push updated files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add draws.json
+          git add draws.json years-dates.json
           if git diff --staged --quiet; then
-            echo "No changes in draws.json"
+            echo "No changes to commit"
           else
             git commit -m "Update Eurojackpot draws.json"
             git push
