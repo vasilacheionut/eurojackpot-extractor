@@ -1,71 +1,10 @@
 {
   "source": "https://www.eurojackpot.com/",
-  "updatedAt": "2026-11-25T01:07:18.004Z",
+  "updatedAt": "2026-11-25T09:25:56.212Z",
   "fetchedOk": true,
-  "pageTitle": "EUROJACKPOT numbers & odds - current Eurolotto winning numbers",
   "error": null,
-  "networkJsonUrls": [
-    {
-      "status": 200,
-      "url": "https://www.eurojackpot.com/"
-    },
-    {
-      "status": 200,
-      "url": "https://www.eurojackpot.com/wlinfo/WL_InfoService?client=jsn&gruppe=ZahlenUndQuoten&ewGewsum=ja&historie=ja&spielart=EJ&adg=ja&lang=en"
-    },
-    {
-      "status": 200,
-      "url": "https://www.eurojackpot.com/wlinfo/WL_InfoService?client=jsn&gruppe=ZahlenUndQuoten&ewGewsum=ja&historie=ja&spielart=EJ&adg=ja&lang=en"
-    },
-    {
-      "status": 200,
-      "url": "https://www.eurojackpot.com/wp-json/ejp/v1/slug/teaser-responsibility"
-    },
-    {
-      "status": 200,
-      "url": "https://www.eurojackpot.com/wp-json/ejp/v1/slug/home-page"
-    },
-    {
-      "status": 200,
-      "url": "https://responder.wt-safetag.com/resp/api/get/111111111111111?url=https%3A%2F%2Fwww.eurojackpot.com%2F"
-    },
-    {
-      "status": 200,
-      "url": "https://eurojackpot.webtrekk.net/879745537112408/wt?p=447,www_eurojackpot_com.,1,1280x800,24,1,1795568845633,0,1280x800,0&eid=2179556884576753391&one=1&fns=1&la=de&cg1=Webseite&cg2=Gewinnzahlen&cg3=not-categorized&cg4=not-categorized&X-WT-STT=2000&np=&pu=https%3A%2F%2Fwww.eurojackpot.com%2F"
-    }
-  ],
-  "networkSnippets": [
-    {
-      "url": "https://www.eurojackpot.com/wlinfo/WL_InfoService?client=jsn&gruppe=ZahlenUndQuoten&ewGewsum=ja&historie=ja&spielart=EJ&adg=ja&lang=en",
-      "preview": "{\n\t\"objType\":\"zahlenUndQuoten\",\n\t\"error\":null,\n\t\"head\":{\n\t\t\"version\":\"1.0\",\n\t\t\"spielart\":\"EJ\",\n\t\t\"spielformel\":\"5 aus 50 und 2 aus 12\",\n\t\t\"datum\":\"2026-11-24\",\n\t\t\"fehlenDaten\":false,\n\t\t\"folgeZiehung\":{\n\t\t\t\"datum\":\"2026-11-27\",\n\t\t\t\"annahmeschluss\":\"2026-11-27T19:00:00+01:00\",\n\t\t\t\"spieldatum\":null\n\t\t},\n\t\t\"standErwarteteGewinne\":{\n\t\t\t\"hauptlotterieAusgewertet\":true,\n\t\t\t\"spiel77Ausgewertet\":false,\n\t\t\t"
-    },
-    {
-      "url": "https://www.eurojackpot.com/wlinfo/WL_InfoService?client=jsn&gruppe=ZahlenUndQuoten&ewGewsum=ja&historie=ja&spielart=EJ&adg=ja&lang=en",
-      "preview": "{\n\t\"objType\":\"zahlenUndQuoten\",\n\t\"error\":null,\n\t\"head\":{\n\t\t\"version\":\"1.0\",\n\t\t\"spielart\":\"EJ\",\n\t\t\"spielformel\":\"5 aus 50 und 2 aus 12\",\n\t\t\"datum\":\"2026-11-24\",\n\t\t\"fehlenDaten\":false,\n\t\t\"folgeZiehung\":{\n\t\t\t\"datum\":\"2026-11-27\",\n\t\t\t\"annahmeschluss\":\"2026-11-27T19:00:00+01:00\",\n\t\t\t\"spieldatum\":null\n\t\t},\n\t\t\"standErwarteteGewinne\":{\n\t\t\t\"hauptlotterieAusgewertet\":true,\n\t\t\t\"spiel77Ausgewertet\":false,\n\t\t\t"
-    },
-    {
-      "url": "https://www.eurojackpot.com/wp-json/ejp/v1/slug/teaser-responsibility",
-      "preview": "\n{\"id\":14,\"title\":\"Verantwortung\",\"content\":\"<p>Staatlich konzessioniertes Gl\\u00fccksspiel ist eine sichere und seri\\u00f6se M\\u00f6glichkeit, verantwortungsbewusst an Lotterien, Sportwetten und Sofortgewinnspielen teilzunehmen. Der Schutz des Spielteilnehmers vor \\u00fcberm\\u00e4\\u00dfigem, s\\u00fcchtig machendem oder betr\\u00fcgerischem Gl\\u00fccksspiel steht im Vordergrund, nicht der gesch\\u00"
-    },
-    {
-      "url": "https://www.eurojackpot.com/wp-json/ejp/v1/slug/home-page",
-      "preview": "\n{\"id\":10,\"title\":\"EUROJACKPOT\",\"subheadline\":\"\",\"image\":{\"large\":\"https:\\/\\/prodmrm.eurojackpot.de\\/wp-content\\/uploads\\/2026\\/01\\/EJP_Website_1024x576_Skydiving.jpg\",\"large_rel\":\"\\/wp-content\\/uploads\\/2026\\/01\\/EJP_Website_1024x576_Skydiving.jpg\",\"alt\":\"Eurojackpot - Waaahnsinnig Reich.\\\" Motiv: Gewinner springen mit Captain Jack Fallschirm.\"},\"link\":{\"isSet\":false,\"url\":\"\",\"title\":\"Hier geht\\u"
-    }
-  ],
-  "bodyTextPreview": "Winning Numbers Prize Check Statistics 10 MILLION JACKPOT odds of winning 1 in 140 m EUROJACKPOT Next chance to win Friday, 27 November 2026 Winning numbers 2026 2025 2024 2023 2022 2021 2020 2019 2018 2017 2016 2015 2014 2013 2012 Tuesday, 24.11.2026 Friday, 20.11.2026 Tuesday, 17.11.2026 Friday, 13.11.2026 Tuesday, 10.11.2026 Friday, 06.11.2026 Tuesday, 03.11.2026 Friday, 30.10.2026 Tuesday, 27.10.2026 Friday, 23.10.2026 Tuesday, 20.10.2026 Friday, 16.10.2026 Tuesday, 13.10.2026 Friday, 09.10.2026 Tuesday, 06.10.2026 Friday, 02.10.2026 Tuesday, 29.09.2026 Friday, 25.09.2026 Tuesday, 22.09.20",
-  "draws": [
-    {
-      "mainNumbers": [
-        22,
-        32,
-        35,
-        36,
-        40
-      ],
-      "euroNumbers": [
-        3,
-        9
-      ]
-    }
-  ]
+  "pageTitle": "EUROJACKPOT numbers & odds - current Eurolotto winning numbers",
+  "visibleText": "Winning Numbers Prize Check Statistics 10 MILLION JACKPOT odds of winning 1 in 140 m EUROJACKPOT Next chance to win Friday, 27 November 2026 Winning numbers 2026 2025 2024 2023 2022 2021 2020 2019 2018 2017 2016 2015 2014 2013 2012 Tuesday, 24.11.2026 Friday, 20.11.2026 Tuesday, 17.11.2026 Friday, 13.11.2026 Tuesday, 10.11.2026 Friday, 06.11.2026 Tuesday, 03.11.2026 Friday, 30.10.2026 Tuesday, 27.10.2026 Friday, 23.10.2026 Tuesday, 20.10.2026 Friday, 16.10.2026 Tuesday, 13.10.2026 Friday, 09.10.2026 Tuesday, 06.10.2026 Friday, 02.10.2026 Tuesday, 29.09.2026 Friday, 25.09.2026 Tuesday, 22.09.2026 Friday, 18.09.2026 Tuesday, 15.09.2026 Friday, 11.09.2026 Tuesday, 08.09.2026 Friday, 04.09.2026 Tuesday, 01.09.2026 Friday, 28.08.2026 Tuesday, 25.08.2026 Friday, 21.08.2026 Tuesday, 18.08.2026 Friday, 14.08.2026 Tuesday, 11.08.2026 Friday, 07.08.2026 Tuesday, 04.08.2026 Friday, 31.07.2026 Tuesday, 28.07.2026 Friday, 24.07.2026 Tuesday, 21.07.2026 Friday, 17.07.2026 Tuesday, 14.07.2026 Friday, 10.07.2026 Tuesday, 07.07.2026 Friday, 03.07.2026 Tuesday, 30.06.2026 Friday, 26.06.2026 Tuesday, 23.06.2026 Friday, 19.06.2026 Tuesday, 16.06.2026 Friday, 12.06.2026 Tuesday, 09.06.2026 Friday, 05.06.2026 Tuesday, 02.06.2026 Friday, 29.05.2026 Tuesday, 26.05.2026 Friday, 22.05.2026 Tuesday, 19.05.2026 Friday, 15.05.2026 Tuesday, 12.05.2026 Friday, 08.05.2026 Tuesday, 05.05.2026 Friday, 01.05.2026 Tuesday, 28.04.2026 Friday, 24.04.2026 Tuesday, 21.04.2026 Friday, 17.04.2026 Tuesday, 14.04.2026 ",
+  "renderedHtmlPreview": "<app-winning-numbers _nghost-serverapp-c74=\"\"><div _ngcontent-serverapp-c74=\"\" appscrolldirective=\"\" class=\"bg-gradient-secondary page pt-0\"><app-hero-tile _ngcontent-serverapp-c74=\"\" _nghost-serverapp-c66=\"\"><!----><div _ngcontent-serverapp-c66=\"\" class=\"hero-tile shadow flex-column\"><div _ngcontent-serverapp-c66=\"\" class=\"jackpot-teaser-wrapper\"><app-jackpot-teaser-wrapper _ngcontent-serverapp-c66=\"\" class=\"hero-tile-text pe-4\" _nghost-serverapp-c41=\"\"><div _ngcontent-serverapp-c41=\"\" class=\"d-flex py-3\"><div _ngcontent-serverapp-c41=\"\" class=\"d-flex ms-auto\"><app-jackpot-teaser _ngcontent-serverapp-c41=\"\" _nghost-serverapp-c40=\"\"><div _ngcontent-serverapp-c40=\"\" class=\"jackpot-teaser text-white\"><div _ngcontent-serverapp-c40=\"\" class=\"d-flex\"><div _ngcontent-serverapp-c40=\"\" class=\"d-flex flex-column flex-grow-1 align-items-center justify-content-center\" style=\"flex-basis: 80%;\"><!----><div _ngcontent-serverapp-c40=\"\" class=\"small\">&nbsp;</div><!----><div _ngcontent-serverapp-c40=\"\" class=\"sum text-gradient-light\">10</div></div><div _ngcontent-serverapp-c40=\"\" class=\"jackpot d-inline-block text-gradient-light mt-auto text-uppercase\"> Million<br _ngcontent-serverapp-c40=\"\"><!----> Jackpot </div></div><div _ngcontent-serverapp-c40=\"\" class=\"small text-center mt-1\">odds of winning 1 in 140 m</div><!----><!----></div></app-jackpot-teaser><!----></div></div><!----></app-jackpot-teaser-wrapper></div><picture _ngcontent-serverapp-c66=\"\"><source _ngcontent-serverapp-c66=\"\" type=\"i",
+  "draws": []
 }
