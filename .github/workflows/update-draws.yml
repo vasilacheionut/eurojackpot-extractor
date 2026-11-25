@@ -26,7 +26,7 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Fetch Eurojackpot draws, build years/dates index and inspect APIs
+      - name: Fetch Eurojackpot draws and inspect historical navigation controls
         run: |
           node -e '
           const fs = require("fs");
@@ -102,12 +102,11 @@ jobs:
               latestDrawDate: prevJson.latestDrawDate || null,
               availableYears: [],
               datesByYear: {},
-              debugApiUrls: [],
+              debugControlsInfo: null,
               totalDraws: 0,
               draws: []
             };
 
-            const capturedResponses = [];
             let browser;
 
             try {
@@ -121,31 +120,6 @@ jobs:
                 viewport: { width: 1280, height: 800 }
               });
               const page = await context.newPage();
-
-              page.on("response", async (res) => {
-                try {
-                  const rUrl = res.url();
-                  const ct = (res.headers()["content-type"] || "").toLowerCase();
-                  if (
-                    !rUrl.includes("google-analytics") &&
-                    !rUrl.includes("googletagmanager") &&
-                    !rUrl.includes("doubleclick") &&
-                    (ct.includes("json") || rUrl.includes("api") || rUrl.includes("draw") || rUrl.includes("eurojackpot") || rUrl.includes("zahlen") || rUrl.includes("ziehung"))
-                  ) {
-                    let bodyPreview = "";
-                    try {
-                      const txt = await res.text();
-                      bodyPreview = txt.slice(0, 300);
-                    } catch (_) {}
-                    capturedResponses.push({
-                      status: res.status(),
-                      contentType: ct,
-                      url: rUrl,
-                      preview: bodyPreview
-                    });
-                  }
-                } catch (_) {}
-              });
 
               await page.goto(url, { waitUntil: "networkidle", timeout: 45000 }).catch(() => {});
               await page.waitForTimeout(3000);
@@ -165,7 +139,43 @@ jobs:
                 }
               }
 
-              await page.waitForTimeout(2000);
+              await page.waitForTimeout(1500);
+
+              const controlsInfo = await page.evaluate(() => {
+                const host = document.querySelector("app-winning-numbers") || document;
+                const selects = Array.from(document.querySelectorAll("select")).map((s, i) => ({
+                  idx: i,
+                  id: s.id || null,
+                  formControlName: s.getAttribute("formcontrolname") || null,
+                  optionsCount: s.options ? s.options.length : 0,
+                  options: s.options ? Array.from(s.options).slice(0, 15).map((o) => ({ value: o.value, text: (o.textContent || "").trim() })) : []
+                }));
+
+                const buttons = Array.from(host.querySelectorAll("button, [role=\"button\"], a")).map((el, i) => ({
+                  idx: i,
+                  tag: el.tagName.toLowerCase(),
+                  text: (el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 60),
+                  ariaLabel: el.getAttribute("aria-label") || null,
+                  className: (el.className || "").toString().slice(0, 80)
+                })).filter((b) => b.text || b.ariaLabel);
+
+                const inputs = Array.from(host.querySelectorAll("input, [formcontrolname]")).map((el, i) => ({
+                  idx: i,
+                  tag: el.tagName.toLowerCase(),
+                  type: el.getAttribute("type") || null,
+                  formControlName: el.getAttribute("formcontrolname") || null,
+                  value: el.value || null,
+                  className: (el.className || "").toString().slice(0, 80)
+                }));
+
+                return {
+                  selects,
+                  buttons: buttons.slice(0, 30),
+                  inputs: inputs.slice(0, 20)
+                };
+              });
+
+              output.debugControlsInfo = controlsInfo;
 
               const pageInfo = await page.evaluate(() => {
                 const host = document.querySelector("app-winning-numbers") || document.body;
@@ -193,7 +203,6 @@ jobs:
               if (pageInfo.datesFoundInText && pageInfo.datesFoundInText[0]) {
                 output.latestDrawDate = pageInfo.datesFoundInText[0];
               }
-              output.debugApiUrls = capturedResponses.slice(0, 25);
 
               const collectedMap = new Map();
               function addDraw(d) {
