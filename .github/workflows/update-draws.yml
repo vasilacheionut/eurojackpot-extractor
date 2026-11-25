@@ -20,55 +20,176 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Fetch and parse Eurojackpot data
+      - name: Fetch Eurojackpot API candidates and draws
         run: |
           node -e '
           const fs = require("fs");
 
-          async function run() {
-            const url = "https://www.eurojackpot.com/";
-            let html = "";
-            let fetchOk = false;
-            let errorMessage = "";
+          const headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*;q=0.8",
+            "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7"
+          };
 
-            try {
-              const res = await fetch(url, {
-                headers: {
-                  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-                  "Accept-Language": "en-US,en;q=0.9",
-                  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-                }
-              });
-              fetchOk = res.ok;
-              html = await res.text();
-              if (!res.ok) {
-                errorMessage = "HTTP status " + res.status;
+          function collectDrawsFromObject(obj, found = []) {
+            if (!obj || typeof obj !== "object") return found;
+
+            if (Array.isArray(obj)) {
+              for (const item of obj) {
+                collectDrawsFromObject(item, found);
               }
-            } catch (err) {
-              errorMessage = err.message;
+              return found;
             }
 
-            const cleanText = html
-              .replace(/<script[\s\S]*?<\/script>/gi, " ")
-              .replace(/<style[\s\S]*?<\/style>/gi, " ")
-              .replace(/<[^>]+>/g, " ")
-              .replace(/\s+/g, " ")
-              .trim();
+            const keys = Object.keys(obj);
+            const joined = keys.join(" ").toLowerCase();
 
-            const sampleNums = (cleanText.match(/\b([1-9]|[1-4][0-9]|50)\b/g) || []).map(Number);
+            const candidateMain =
+              obj.numbers || obj.mainNumbers || obj.drawnNumbers || obj.winningNumbers || obj.zahlen;
+            const candidateEuro =
+              obj.euroNumbers || obj.additionalNumbers || obj.eurozahlen || obj.stars;
+            const candidateDate =
+              obj.date || obj.drawDate || obj.datum || obj.drawingDate;
 
-            const output = {
-              source: url,
-              fetchedOk: fetchOk,
-              error: errorMessage || null,
+            if (Array.isArray(candidateMain) && candidateMain.length >= 5) {
+              const mainNums = candidateMain
+                .slice(0, 5)
+                .map(Number)
+                .filter((n) => Number.isInteger(n) && n >= 1 && n <= 50);
+
+              const euroNums = Array.isArray(candidateEuro)
+                ? candidateEuro
+                    .slice(0, 2)
+                    .map(Number)
+                    .filter((n) => Number.isInteger(n) && n >= 1 && n <= 12)
+                : [];
+
+              if (mainNums.length === 5) {
+                found.push({
+                  date: candidateDate ? String(candidateDate) : null,
+                  mainNumbers: mainNums,
+                  euroNumbers: euroNums
+                });
+              }
+            }
+
+            for (const key of keys) {
+              if (joined.includes("draw") || joined.includes("ziehung") || typeof obj[key] === "object") {
+                collectDrawsFromObject(obj[key], found);
+              }
+            }
+
+            return found;
+          }
+
+          async function run() {
+            const baseUrl = "https://www.eurojackpot.com/";
+            const result = {
+              source: baseUrl,
               updatedAt: new Date().toISOString(),
-              htmlLength: html.length,
-              textPreview: cleanText.slice(0, 600),
-              sampleNumbersFound: sampleNums.slice(0, 25),
+              fetchedPageOk: false,
+              mainJsUrl: null,
+              discoveredEndpoints: [],
+              endpointProbes: [],
               draws: []
             };
 
-            fs.writeFileSync("draws.json", JSON.stringify(output, null, 2), "utf8");
+            try {
+              const pageRes = await fetch(baseUrl, {
+                headers: {
+                  ...headers,
+                  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+                }
+              });
+              result.fetchedPageOk = pageRes.ok;
+              const html = await pageRes.text();
+
+              const mainJsMatch = html.match(/src=["'\'']([^"'\'']*main[^"'\'']*\.js)["'\'']/i);
+              if (mainJsMatch && mainJsMatch[1]) {
+                result.mainJsUrl = new URL(mainJsMatch[1], baseUrl).toString();
+
+                const jsRes = await fetch(result.mainJsUrl, {
+                  headers: {
+                    ...headers,
+                    "Accept": "*/*"
+                  }
+                });
+
+                if (jsRes.ok) {
+                  const jsCode = await jsRes.text();
+                  const matches = new Set();
+
+                  const urlMatches = jsCode.match(/https?:\/\/[a-zA-Z0-9._~:/?#\[\]@!$&'\''()*+,;=-]+/g) || [];
+                  for (const u of urlMatches) {
+                    if (/eurojackpot|lotto|api|draw|ziehung|zahlen|quoten|results|json/i.test(u)) {
+                      matches.add(u);
+                    }
+                  }
+
+                  const pathMatches = jsCode.match(/["'\''](\/[a-zA-Z0-9_./-]{2,80})["'\'']/g) || [];
+                  for (const raw of pathMatches) {
+                    const p = raw.slice(1, -1);
+                    if (/api|draw|ziehung|zahlen|quoten|results|eurojackpot|json/i.test(p) && !/\.(svg|png|jpg|css|ttf|woff2?)$/i.test(p)) {
+                      matches.add(new URL(p, baseUrl).toString());
+                    }
+                  }
+
+                  result.discoveredEndpoints = Array.from(matches).slice(0, 40);
+                }
+              }
+            } catch (err) {
+              result.pageError = err.message;
+            }
+
+            const fallbackCandidates = [
+              "https://www.eurojackpot.com/api/draws",
+              "https://www.eurojackpot.com/assets/draws.json",
+              "https://www.eurojackpot.com/assets/data/draws.json"
+            ];
+
+            const probeTargets = Array.from(new Set([...result.discoveredEndpoints, ...fallbackCandidates])).slice(0, 15);
+
+            for (const target of probeTargets) {
+              if (!/\.(json)(\?|$)/i.test(target) && !/\/api\//i.test(target)) {
+                continue;
+              }
+              try {
+                const probeRes = await fetch(target, { headers });
+                const contentType = probeRes.headers.get("content-type") || "";
+                const text = await probeRes.text();
+
+                let parsedJson = null;
+                if (contentType.includes("json") || text.trim().startsWith("{") || text.trim().startsWith("[")) {
+                  try {
+                    parsedJson = JSON.parse(text);
+                  } catch (_) {
+                    parsedJson = null;
+                  }
+                }
+
+                const extracted = parsedJson ? collectDrawsFromObject(parsedJson) : [];
+                if (extracted.length > 0 && result.draws.length === 0) {
+                  result.draws = extracted.slice(0, 20);
+                }
+
+                result.endpointProbes.push({
+                  url: target,
+                  status: probeRes.status,
+                  ok: probeRes.ok,
+                  isJson: Boolean(parsedJson),
+                  extractedCount: extracted.length,
+                  preview: text.slice(0, 220)
+                });
+              } catch (err) {
+                result.endpointProbes.push({
+                  url: target,
+                  ok: false,
+                  error: err.message
+                });
+              }
+            }
+
+            fs.writeFileSync("draws.json", JSON.stringify(result, null, 2), "utf8");
           }
 
           run();
