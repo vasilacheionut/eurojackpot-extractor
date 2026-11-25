@@ -1,10 +1,10 @@
 {
   "source": "https://www.eurojackpot.com/",
-  "updatedAt": "2026-11-25T10:09:16.364Z",
+  "updatedAt": "2026-11-25T10:15:56.610Z",
   "fetchedOk": true,
   "error": null,
-  "nextDrawDate": "Friday, 27 November 2026",
-  "latestDrawDate": "Tuesday, 24.11.2026",
+  "nextDrawDate": "",
+  "latestDrawDate": null,
   "totalDraws": 80,
   "draws": [
     {
