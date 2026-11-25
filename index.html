@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Eurojackpot" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
   <title>Eurojackpot — Extrageri, Generator & JSON</title>
   <style>
     :root {
@@ -78,6 +84,23 @@
       font-size: 1.15rem;
       font-weight: 700;
       letter-spacing: -0.01em;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .install-btn {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: none;
+      background-color: var(--primary);
+      color: var(--primary-text);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
     }
 
     .theme-btn {
@@ -460,7 +483,10 @@
   <div class="app">
     <header class="top-bar">
       <div class="top-title">Eurojackpot</div>
-      <button type="button" class="theme-btn" id="theme-btn">Temă: Întunecat</button>
+      <div class="top-actions">
+        <button type="button" class="install-btn" id="install-btn" hidden>Instalează</button>
+        <button type="button" class="theme-btn" id="theme-btn">Temă: Întunecat</button>
+      </div>
     </header>
 
     <div class="meta-strip" id="meta-info">Se încarcă draws.json...</div>
@@ -535,6 +561,7 @@
       let allDrawsDesc = [];
       let currentMain = [];
       let currentBonus = [];
+      let deferredPrompt = null;
 
       function setStatus(msg) {
         document.getElementById("status-msg").textContent = msg;
@@ -562,6 +589,36 @@
             panel.classList.toggle("active", active);
           }
         });
+      }
+
+      /* --- PWA INSTALL & SERVICE WORKER --- */
+      window.addEventListener("beforeinstallprompt", function (e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        const installBtn = document.getElementById("install-btn");
+        if (installBtn) installBtn.hidden = false;
+      });
+
+      window.addEventListener("appinstalled", function () {
+        deferredPrompt = null;
+        const installBtn = document.getElementById("install-btn");
+        if (installBtn) installBtn.hidden = true;
+      });
+
+      function triggerInstall() {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function () {
+          deferredPrompt = null;
+          const installBtn = document.getElementById("install-btn");
+          if (installBtn) installBtn.hidden = true;
+        });
+      }
+
+      function registerServiceWorker() {
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.register("./sw.js").catch(function () {});
+        }
       }
 
       /* --- EXTRAGERI & JSON --- */
@@ -829,7 +886,11 @@
       }
 
       document.addEventListener("DOMContentLoaded", function () {
+        registerServiceWorker();
+
+        document.getElementById("install-btn").addEventListener("click", triggerInstall);
         document.getElementById("theme-btn").addEventListener("click", toggleTheme);
+
         document.getElementById("tab-draws-btn").addEventListener("click", function () {
           switchTab("draws");
         });
