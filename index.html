@@ -397,6 +397,10 @@
       border: 1px solid var(--border);
     }
 
+    .digit-diff-ball.euro-digit {
+      color: #ffffff;
+    }
+
     /* Tab 2: Generator */
     .generator-body {
       flex: 1;
@@ -1198,6 +1202,7 @@
 
         euroNumbers.forEach(function (n, idx) {
           const col = 11 + idx * 2;
+          const euroDigitDiff = computeDigitDiff(n);
           cellsHtml +=
             '<span class="ball ' +
             parityClass(n) +
@@ -1205,6 +1210,12 @@
             col +
             ';grid-row:1;">' +
             n +
+            "</span>";
+          cellsHtml +=
+            '<span class="digit-diff-ball euro-digit" style="grid-column:' +
+            col +
+            ';grid-row:3;">' +
+            euroDigitDiff +
             "</span>";
         });
 
