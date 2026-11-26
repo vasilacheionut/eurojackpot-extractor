@@ -960,6 +960,7 @@
   <script>
     (function () {
       const THEME_STORAGE_KEY = "eurojackpot_theme";
+      const FILTERS_STORAGE_KEY = "eurojackpot_filters";
       let allDrawsDesc = [];
       let currentMain = [];
       let currentBonus = [];
@@ -1004,6 +1005,42 @@
         } catch (e) {
           // ignoră dacă localStorage nu este accesibil
         }
+      }
+
+      function readSavedFilters() {
+        try {
+          const raw = window.localStorage.getItem(FILTERS_STORAGE_KEY);
+          if (!raw) return { year: "ALL", mainDiff: "ALL", euroDiff: "ALL" };
+          const parsed = JSON.parse(raw);
+          return {
+            year: parsed && parsed.year ? String(parsed.year) : "ALL",
+            mainDiff: parsed && parsed.mainDiff ? String(parsed.mainDiff) : "ALL",
+            euroDiff: parsed && parsed.euroDiff ? String(parsed.euroDiff) : "ALL"
+          };
+        } catch (e) {
+          return { year: "ALL", mainDiff: "ALL", euroDiff: "ALL" };
+        }
+      }
+
+      function saveCurrentFilters() {
+        const payload = {
+          year: document.getElementById("year-filter").value || "ALL",
+          mainDiff: document.getElementById("main-diff-filter").value || "ALL",
+          euroDiff: document.getElementById("euro-diff-filter").value || "ALL"
+        };
+        try {
+          window.localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(payload));
+        } catch (e) {
+          // ignoră dacă localStorage nu este accesibil
+        }
+      }
+
+      function setSelectIfAvailable(selectEl, targetValue) {
+        if (!selectEl) return;
+        const exists = Array.from(selectEl.options).some(function (o) {
+          return o.value === targetValue;
+        });
+        selectEl.value = exists ? targetValue : "ALL";
       }
 
       function switchTab(tabName) {
@@ -1288,7 +1325,6 @@
 
       function populateYearFilter(draws) {
         const select = document.getElementById("year-filter");
-        const previousVal = select.value || "ALL";
         const yearsSet = new Set(draws.map((d) => d.year).filter((y) => y > 0));
         for (let y = 2026; y >= 2012; y--) {
           yearsSet.add(y);
@@ -1302,18 +1338,11 @@
           opt.textContent = String(yr);
           select.appendChild(opt);
         }
-
-        if (Array.from(select.options).some((o) => o.value === previousVal)) {
-          select.value = previousVal;
-        }
       }
 
       function populateDiffFilters(draws) {
         const mainSelect = document.getElementById("main-diff-filter");
         const euroSelect = document.getElementById("euro-diff-filter");
-
-        const prevMain = mainSelect.value || "ALL";
-        const prevEuro = euroSelect.value || "ALL";
 
         const mainSet = new Set();
         const euroSet = new Set();
@@ -1345,19 +1374,26 @@
           opt.textContent = "Dist. " + val;
           euroSelect.appendChild(opt);
         });
+      }
 
-        if (Array.from(mainSelect.options).some((o) => o.value === prevMain)) {
-          mainSelect.value = prevMain;
-        }
-        if (Array.from(euroSelect.options).some((o) => o.value === prevEuro)) {
-          euroSelect.value = prevEuro;
-        }
+      function applySavedFiltersToSelects() {
+        const saved = readSavedFilters();
+        setSelectIfAvailable(document.getElementById("year-filter"), saved.year);
+        setSelectIfAvailable(document.getElementById("main-diff-filter"), saved.mainDiff);
+        setSelectIfAvailable(document.getElementById("euro-diff-filter"), saved.euroDiff);
+        saveCurrentFilters();
+      }
+
+      function handleFilterChange() {
+        saveCurrentFilters();
+        renderDraws();
       }
 
       function resetDiffAndYearFilters() {
         document.getElementById("year-filter").value = "ALL";
         document.getElementById("main-diff-filter").value = "ALL";
         document.getElementById("euro-diff-filter").value = "ALL";
+        saveCurrentFilters();
         renderDraws();
       }
 
@@ -1419,6 +1455,7 @@
             allDrawsDesc = normalizeDraws(data);
             populateYearFilter(allDrawsDesc);
             populateDiffFilters(allDrawsDesc);
+            applySavedFiltersToSelects();
             renderDraws();
 
             document.getElementById("json-view").value = JSON.stringify(data, null, 2);
@@ -1648,9 +1685,9 @@
           switchTab("json");
         });
 
-        document.getElementById("year-filter").addEventListener("change", renderDraws);
-        document.getElementById("main-diff-filter").addEventListener("change", renderDraws);
-        document.getElementById("euro-diff-filter").addEventListener("change", renderDraws);
+        document.getElementById("year-filter").addEventListener("change", handleFilterChange);
+        document.getElementById("main-diff-filter").addEventListener("change", handleFilterChange);
+        document.getElementById("euro-diff-filter").addEventListener("change", handleFilterChange);
         document.getElementById("reset-filters-btn").addEventListener("click", resetDiffAndYearFilters);
 
         document.getElementById("reload-btn").addEventListener("click", loadJsonFile);
