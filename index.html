@@ -164,29 +164,79 @@
     /* Tab 1: Extrageri */
     .filter-bar {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 10px 16px;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px 12px;
       background-color: var(--surface);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
 
-    .filter-bar label {
-      font-size: 0.9rem;
+    .filter-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .filter-row label {
+      font-size: 0.85rem;
       font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
     }
 
     select {
-      padding: 9px 12px;
+      padding: 7px 10px;
       border-radius: 8px;
       border: 1px solid var(--border);
       background-color: var(--surface-2);
       color: var(--text);
-      font-size: 0.95rem;
+      font-size: 0.88rem;
       font-weight: 600;
-      min-width: 150px;
+      min-width: 110px;
+    }
+
+    .diff-filters-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .diff-filter-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .diff-filter-item label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .diff-filter-item select {
+      width: 100%;
+      min-width: 0;
+      padding: 6px 8px;
+      font-size: 0.85rem;
+    }
+
+    .reset-filters-btn {
+      align-self: flex-end;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background-color: var(--secondary);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .reset-filters-btn:hover {
+      background-color: var(--secondary-hover);
     }
 
     .draws-list {
@@ -569,10 +619,27 @@
       <!-- TAB 1: EXTRAGERI -->
       <section class="tab-panel active" id="panel-draws" role="tabpanel">
         <div class="filter-bar">
-          <label for="year-filter">An (2026–2012):</label>
-          <select id="year-filter">
-            <option value="ALL">Toți anii</option>
-          </select>
+          <div class="filter-row">
+            <label for="year-filter">An (2026–2012):</label>
+            <select id="year-filter">
+              <option value="ALL">Toți anii</option>
+            </select>
+          </div>
+          <div class="diff-filters-grid">
+            <div class="diff-filter-item">
+              <label for="main-diff-filter">Dist. 4 bile (5 nr.)</label>
+              <select id="main-diff-filter">
+                <option value="ALL">Toate</option>
+              </select>
+            </div>
+            <div class="diff-filter-item">
+              <label for="euro-diff-filter">Dist. 2 stele</label>
+              <select id="euro-diff-filter">
+                <option value="ALL">Toate</option>
+              </select>
+            </div>
+            <button type="button" class="reset-filters-btn" id="reset-filters-btn">Reset</button>
+          </div>
         </div>
         <div class="draws-list" id="draws-list">
           <div class="empty-msg">Se încarcă extragerile...</div>
@@ -799,17 +866,88 @@
         }
       }
 
+      function populateDiffFilters(draws) {
+        const mainSelect = document.getElementById("main-diff-filter");
+        const euroSelect = document.getElementById("euro-diff-filter");
+
+        const prevMain = mainSelect.value || "ALL";
+        const prevEuro = euroSelect.value || "ALL";
+
+        const mainSet = new Set();
+        const euroSet = new Set();
+
+        draws.forEach(function (d) {
+          computeDiffs(d.mainNumbers).forEach(function (val) {
+            mainSet.add(val);
+          });
+          computeDiffs(d.euroNumbers).forEach(function (val) {
+            euroSet.add(val);
+          });
+        });
+
+        const sortedMain = Array.from(mainSet).sort(function (a, b) { return a - b; });
+        const sortedEuro = Array.from(euroSet).sort(function (a, b) { return a - b; });
+
+        mainSelect.innerHTML = '<option value="ALL">Toate</option>';
+        sortedMain.forEach(function (val) {
+          const opt = document.createElement("option");
+          opt.value = String(val);
+          opt.textContent = "Dist. " + val;
+          mainSelect.appendChild(opt);
+        });
+
+        euroSelect.innerHTML = '<option value="ALL">Toate</option>';
+        sortedEuro.forEach(function (val) {
+          const opt = document.createElement("option");
+          opt.value = String(val);
+          opt.textContent = "Dist. " + val;
+          euroSelect.appendChild(opt);
+        });
+
+        if (Array.from(mainSelect.options).some((o) => o.value === prevMain)) {
+          mainSelect.value = prevMain;
+        }
+        if (Array.from(euroSelect.options).some((o) => o.value === prevEuro)) {
+          euroSelect.value = prevEuro;
+        }
+      }
+
+      function resetDiffAndYearFilters() {
+        document.getElementById("year-filter").value = "ALL";
+        document.getElementById("main-diff-filter").value = "ALL";
+        document.getElementById("euro-diff-filter").value = "ALL";
+        renderDraws();
+      }
+
       function renderDraws() {
         const container = document.getElementById("draws-list");
         const selectedYear = document.getElementById("year-filter").value;
+        const selectedMainDiff = document.getElementById("main-diff-filter").value;
+        const selectedEuroDiff = document.getElementById("euro-diff-filter").value;
 
-        const filtered =
-          selectedYear === "ALL"
-            ? allDrawsDesc
-            : allDrawsDesc.filter((d) => String(d.year) === selectedYear);
+        const filtered = allDrawsDesc.filter(function (d) {
+          if (selectedYear !== "ALL" && String(d.year) !== selectedYear) {
+            return false;
+          }
+          if (selectedMainDiff !== "ALL") {
+            const targetMain = Number(selectedMainDiff);
+            const mDiffs = computeDiffs(d.mainNumbers);
+            if (!mDiffs.includes(targetMain)) {
+              return false;
+            }
+          }
+          if (selectedEuroDiff !== "ALL") {
+            const targetEuro = Number(selectedEuroDiff);
+            const eDiffs = computeDiffs(d.euroNumbers);
+            if (!eDiffs.includes(targetEuro)) {
+              return false;
+            }
+          }
+          return true;
+        });
 
         if (!filtered.length) {
-          container.innerHTML = '<div class="empty-msg">Nu există extrageri pentru anul selectat.</div>';
+          container.innerHTML = '<div class="empty-msg">Nu există extrageri pentru filtrele selectate.</div>';
           return;
         }
 
@@ -838,6 +976,7 @@
           .then((data) => {
             allDrawsDesc = normalizeDraws(data);
             populateYearFilter(allDrawsDesc);
+            populateDiffFilters(allDrawsDesc);
             renderDraws();
 
             document.getElementById("json-view").value = JSON.stringify(data, null, 2);
@@ -1039,6 +1178,10 @@
         });
 
         document.getElementById("year-filter").addEventListener("change", renderDraws);
+        document.getElementById("main-diff-filter").addEventListener("change", renderDraws);
+        document.getElementById("euro-diff-filter").addEventListener("change", renderDraws);
+        document.getElementById("reset-filters-btn").addEventListener("click", resetDiffAndYearFilters);
+
         document.getElementById("reload-btn").addEventListener("click", loadJsonFile);
         document.getElementById("copy-btn").addEventListener("click", copyJson);
 
