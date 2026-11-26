@@ -227,20 +227,21 @@
     }
 
     .draw-matrix {
-      display: inline-flex;
-      flex-direction: column;
-      gap: 6px;
-      align-self: flex-start;
-    }
-
-    .balls-line,
-    .diffs-line {
-      display: flex;
+      display: grid;
+      grid-template-columns:
+        34px 24px
+        34px 24px
+        34px 24px
+        34px 24px
+        34px
+        18px
+        34px 24px
+        34px;
+      row-gap: 6px;
+      column-gap: 4px;
       align-items: center;
-    }
-
-    .balls-line {
-      gap: 6px;
+      justify-items: center;
+      align-self: flex-start;
     }
 
     .ball {
@@ -254,7 +255,6 @@
       font-weight: 700;
       background-color: var(--secondary);
       color: var(--text);
-      flex-shrink: 0;
     }
 
     .ball.euro {
@@ -263,14 +263,9 @@
     }
 
     .sep {
-      width: 14px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
       color: var(--muted);
       font-weight: 700;
       font-size: 0.95rem;
-      flex-shrink: 0;
     }
 
     .diff-ball {
@@ -286,17 +281,10 @@
       background-color: var(--surface-2);
       color: var(--accent);
       border: 1px solid var(--border);
-      flex-shrink: 0;
     }
 
     .diff-ball.euro {
       color: var(--euro-bg);
-    }
-
-    .diff-spacer {
-      height: 24px;
-      flex-shrink: 0;
-      display: inline-block;
     }
 
     /* Tab 2: Generator */
@@ -692,82 +680,34 @@
       }
 
       function renderDrawMatrix(mainNumbers, euroNumbers) {
-        // Dimensiuni exacte:
-        // Bila mare = 34px, gap = 6px => pas centru-la-centru = 40px.
-        // Bila mică distanță = 24px => jumătate = 12px.
-        const ballSize = 34;
-        const gap = 6;
-        const step = ballSize + gap; // 40px
-        const diffSize = 24;
-        const halfDiff = diffSize / 2; // 12px
-
-        const mainHtml = mainNumbers.map(function (n) {
-          return '<span class="ball">' + n + "</span>";
-        }).join("");
-
-        const euroHtml = euroNumbers.map(function (n) {
-          return '<span class="ball euro">' + n + "</span>";
-        }).join("");
-
         const mainDiffs = computeDiffs(mainNumbers);
         const euroDiffs = computeDiffs(euroNumbers);
 
-        // Centrul primului spațiu (între bila 1 și bila 2) este la step + step/2 = 40 + 20 = 60px.
-        // Întrucât diff-ball are 24px, marginea stângă a primei bile de distanță este 60 - 12 = 48px.
-        let mainDiffsHtml = "";
-        if (mainDiffs.length > 0) {
-          const firstLead = step + step / 2 - halfDiff; // 48px
-          mainDiffsHtml += '<span class="diff-spacer" style="width:' + firstLead + 'px;"></span>';
-          mainDiffs.forEach(function (d, idx) {
-            mainDiffsHtml += '<span class="diff-ball">' + d + "</span>";
-            if (idx < mainDiffs.length - 1) {
-              // De la sfârșitul acestei bile (48 + 24 = 72) până la următoarea (88) => 16px
-              const between = step - diffSize; // 16px
-              mainDiffsHtml += '<span class="diff-spacer" style="width:' + between + 'px;"></span>';
-            }
-          });
-          // După ultima bilă de distanță, completăm până la finalul celor 5 bile mari:
-          // Finalul bilei 5 = 5*34 + 4*6 = 170 + 24 = 194px.
-          // Sfârșitul ultimei diff-ball (pentru 4 diferențe) = 48 + 4*24 + 3*16 = 48 + 96 + 48 = 192px -> 2px.
-          const totalMainWidth = mainNumbers.length * ballSize + Math.max(0, mainNumbers.length - 1) * gap;
-          const currentMainEnd = firstLead + mainDiffs.length * diffSize + Math.max(0, mainDiffs.length - 1) * (step - diffSize);
-          const tailMain = Math.max(0, totalMainWidth - currentMainEnd);
-          if (tailMain > 0) {
-            mainDiffsHtml += '<span class="diff-spacer" style="width:' + tailMain + 'px;"></span>';
-          }
-        }
+        let cellsHtml = "";
 
-        // Separatorul '+' de sus are 14px lățime și 6px gap stânga + 6px gap dreapta = 26px total pe linia de sus
-        const sepSlotWidth = gap + 14 + gap; // 26px
+        mainNumbers.forEach(function (n, idx) {
+          const col = idx * 2 + 1;
+          cellsHtml += '<span class="ball" style="grid-column:' + col + ';grid-row:1;">' + n + "</span>";
+        });
 
-        // Pentru cele 2 stele: centrul spațiului dintre steaua 1 și steaua 2 este la ballSize/2 + step/2 = 17 + 20 = 37px
-        // de la începutul primei stele. Marginea stângă = 37 - 12 = 25px.
-        let euroDiffsHtml = "";
-        if (euroDiffs.length > 0) {
-          const euroLead = ballSize / 2 + step / 2 - halfDiff; // 25px
-          euroDiffsHtml += '<span class="diff-spacer" style="width:' + euroLead + 'px;"></span>';
-          euroDiffs.forEach(function (d, idx) {
-            euroDiffsHtml += '<span class="diff-ball euro">' + d + "</span>";
-            if (idx < euroDiffs.length - 1) {
-              euroDiffsHtml += '<span class="diff-spacer" style="width:' + (step - diffSize) + 'px;"></span>';
-            }
-          });
-        }
+        mainDiffs.forEach(function (d, idx) {
+          const col = idx * 2 + 2;
+          cellsHtml += '<span class="diff-ball" style="grid-column:' + col + ';grid-row:2;">' + d + "</span>";
+        });
 
-        return `
-          <div class="draw-matrix">
-            <div class="balls-line">
-              ${mainHtml}
-              <span class="sep">+</span>
-              ${euroHtml}
-            </div>
-            <div class="diffs-line">
-              ${mainDiffsHtml}
-              <span class="diff-spacer" style="width:${sepSlotWidth}px;"></span>
-              ${euroDiffsHtml}
-            </div>
-          </div>
-        `;
+        cellsHtml += '<span class="sep" style="grid-column:10;grid-row:1;">+</span>';
+
+        euroNumbers.forEach(function (n, idx) {
+          const col = 11 + idx * 2;
+          cellsHtml += '<span class="ball euro" style="grid-column:' + col + ';grid-row:1;">' + n + "</span>";
+        });
+
+        euroDiffs.forEach(function (d, idx) {
+          const col = 12 + idx * 2;
+          cellsHtml += '<span class="diff-ball euro" style="grid-column:' + col + ';grid-row:2;">' + d + "</span>";
+        });
+
+        return '<div class="draw-matrix">' + cellsHtml + "</div>";
       }
 
       function dateToSortableInt(dateStr) {
