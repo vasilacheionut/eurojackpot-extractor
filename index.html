@@ -80,10 +80,22 @@
       flex-shrink: 0;
     }
 
-    .top-title {
+    .brand-link {
       font-size: 1.15rem;
       font-weight: 700;
       letter-spacing: -0.01em;
+      color: var(--text);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 2px;
+      border-radius: 6px;
+    }
+
+    .brand-link:hover,
+    .brand-link:active {
+      color: var(--accent);
     }
 
     .top-actions {
@@ -482,7 +494,7 @@
 <body>
   <div class="app">
     <header class="top-bar">
-      <div class="top-title">Eurojackpot</div>
+      <a href="./" class="brand-link" id="brand-reload-link" title="Reîncarcă pagina">Eurojackpot</a>
       <div class="top-actions">
         <button type="button" class="install-btn" id="install-btn" hidden>Instalează</button>
         <button type="button" class="theme-btn" id="theme-btn">Temă: Întunecat</button>
@@ -565,6 +577,11 @@
 
       function setStatus(msg) {
         document.getElementById("status-msg").textContent = msg;
+      }
+
+      function reloadPage(e) {
+        if (e) e.preventDefault();
+        window.location.reload();
       }
 
       function toggleTheme() {
@@ -888,6 +905,7 @@
       document.addEventListener("DOMContentLoaded", function () {
         registerServiceWorker();
 
+        document.getElementById("brand-reload-link").addEventListener("click", reloadPage);
         document.getElementById("install-btn").addEventListener("click", triggerInstall);
         document.getElementById("theme-btn").addEventListener("click", toggleTheme);
 
