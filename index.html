@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Eurojackpot" />
   <link rel="manifest" href="./manifest.json" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
-  <title>Eurojackpot — Extrageri, Generator & JSON</title>
+  <title>Eurojackpot — Extrageri, Generator, Matrice & JSON</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -27,6 +27,16 @@
       --digit-diff: #a78bfa;
       --euro-bg: #eab308;
       --euro-text: #0f172a;
+
+      /* Culori paritate pe cifre */
+      --pp-bg: #1e3a8a;
+      --pp-fg: #eff6ff;
+      --pi-bg: #16a34a;
+      --pi-fg: #f0fdf4;
+      --ip-bg: #ea580c;
+      --ip-fg: #fff7ed;
+      --ii-bg: #dc2626;
+      --ii-fg: #fef2f2;
     }
 
     html[data-theme="light"] {
@@ -45,6 +55,15 @@
       --digit-diff: #7c3aed;
       --euro-bg: #eab308;
       --euro-text: #0f172a;
+
+      --pp-bg: #1e3a8a;
+      --pp-fg: #ffffff;
+      --pi-bg: #15803d;
+      --pi-fg: #ffffff;
+      --ip-bg: #c2410c;
+      --ip-fg: #ffffff;
+      --ii-bg: #b91c1c;
+      --ii-fg: #ffffff;
     }
 
     * {
@@ -515,7 +534,158 @@
       border-bottom: none;
     }
 
-    /* Tab 3: JSON */
+    /* Tab 3: Matrice 1-50, Distanțe cifre & Paritate PP/PI/IP/II */
+    .matrix-body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 12px 12px 88px;
+      scroll-padding-bottom: 88px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .matrix-card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .matrix-card-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .matrix-card-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .board-1-50 {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 5px;
+    }
+
+    .board-num {
+      aspect-ratio: 1 / 1;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .parity-PP {
+      background-color: var(--pp-bg);
+      color: var(--pp-fg);
+    }
+
+    .parity-PI {
+      background-color: var(--pi-bg);
+      color: var(--pi-fg);
+    }
+
+    .parity-IP {
+      background-color: var(--ip-bg);
+      color: var(--ip-fg);
+    }
+
+    .parity-II {
+      background-color: var(--ii-bg);
+      color: var(--ii-fg);
+    }
+
+    .legend-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .legend-item {
+      background-color: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .legend-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .badge-parity {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+    }
+
+    .color-name {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .legend-nums {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .digit-diff-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .digit-diff-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background-color: var(--surface-2);
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+
+    .digit-diff-key {
+      font-weight: 800;
+      color: var(--accent);
+      min-width: 24px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .digit-diff-vals {
+      color: var(--text);
+      font-weight: 600;
+      word-spacing: 6px;
+      line-height: 1.4;
+      flex: 1;
+    }
+
+    /* Tab 4: JSON */
     .json-panel-body {
       flex: 1;
       min-height: 0;
@@ -591,12 +761,13 @@
       border: none;
       background: transparent;
       color: var(--muted);
-      font-size: 0.92rem;
+      font-size: 0.82rem;
       font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 0 4px;
     }
 
     .nav-btn.active {
@@ -690,7 +861,36 @@
         </div>
       </section>
 
-      <!-- TAB 3: JSON -->
+      <!-- TAB 3: MATRICE (1-50, DISTANȚE CIFRE, PARITATE PP/PI/IP/II) -->
+      <section class="tab-panel" id="panel-matrix" role="tabpanel">
+        <div class="matrix-body">
+          <div class="matrix-card">
+            <div class="matrix-card-title">
+              <span>Panou numere (1 – 50)</span>
+              <span class="matrix-card-sub">PP · PI · IP · II</span>
+            </div>
+            <div class="board-1-50" id="board-1-50"></div>
+          </div>
+
+          <div class="matrix-card">
+            <div class="matrix-card-title">
+              <span>Paritate pe cifre (01–50)</span>
+              <span class="matrix-card-sub">P = Par · I = Impar</span>
+            </div>
+            <div class="legend-grid" id="parity-legend"></div>
+          </div>
+
+          <div class="matrix-card">
+            <div class="matrix-card-title">
+              <span>Distanța între cifre (|c1 − c2|)</span>
+              <span class="matrix-card-sub">01–09 = 0 + cifră</span>
+            </div>
+            <div class="digit-diff-list" id="digit-diff-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: JSON -->
       <section class="tab-panel" id="panel-json" role="tabpanel">
         <div class="json-panel-body">
           <textarea id="json-view" readonly></textarea>
@@ -709,6 +909,9 @@
       </button>
       <button type="button" class="nav-btn" id="tab-generator-btn" role="tab" aria-selected="false">
         Generator
+      </button>
+      <button type="button" class="nav-btn" id="tab-matrix-btn" role="tab" aria-selected="false">
+        Matrice
       </button>
       <button type="button" class="nav-btn" id="tab-json-btn" role="tab" aria-selected="false">
         JSON
@@ -741,7 +944,7 @@
       }
 
       function switchTab(tabName) {
-        const tabs = ["draws", "generator", "json"];
+        const tabs = ["draws", "generator", "matrix", "json"];
         tabs.forEach(function (t) {
           const active = t === tabName;
           const btn = document.getElementById("tab-" + t + "-btn");
@@ -798,12 +1001,119 @@
         return diffs;
       }
 
+      function getTwoDigits(num) {
+        const clean = Math.abs(Math.trunc(Number(num))) || 0;
+        const padded = String(clean).padStart(2, "0");
+        const c1 = Number(padded[padded.length - 2]);
+        const c2 = Number(padded[padded.length - 1]);
+        return [c1, c2];
+      }
+
       function computeDigitDiff(num) {
-        const clean = Math.abs(Math.trunc(Number(num)));
-        if (!Number.isFinite(clean)) return 0;
-        const digits = String(clean).split("").map(Number);
-        if (digits.length < 2) return digits[0] || 0;
-        return Math.abs(digits[0] - digits[1]);
+        const [c1, c2] = getTwoDigits(num);
+        return Math.abs(c1 - c2);
+      }
+
+      function getDigitParityCode(num) {
+        const [c1, c2] = getTwoDigits(num);
+        const p1 = c1 % 2 === 0 ? "P" : "I";
+        const p2 = c2 % 2 === 0 ? "P" : "I";
+        return p1 + p2;
+      }
+
+      /* --- PANOU 1-50, PARITATE PP/PI/IP/II & LISTĂ DISTANȚE CIFRE --- */
+      function renderMatrixTab() {
+        const boardEl = document.getElementById("board-1-50");
+        const legendEl = document.getElementById("parity-legend");
+        const diffListEl = document.getElementById("digit-diff-list");
+
+        const groups = {
+          PP: [],
+          PI: [],
+          IP: [],
+          II: []
+        };
+
+        const diffGroups = new Map();
+        for (let d = 0; d <= 9; d++) {
+          diffGroups.set(d, []);
+        }
+
+        let boardHtml = "";
+        for (let n = 1; n <= 50; n++) {
+          const code = getDigitParityCode(n);
+          groups[code].push(n);
+
+          const dist = computeDigitDiff(n);
+          if (!diffGroups.has(dist)) diffGroups.set(dist, []);
+          diffGroups.get(dist).push(n);
+
+          boardHtml +=
+            '<span class="board-num parity-' +
+            code +
+            '" title="' +
+            n +
+            " (" +
+            code +
+            ", dist. cifre: " +
+            dist +
+            ')">' +
+            n +
+            "</span>";
+        }
+
+        if (boardEl) boardEl.innerHTML = boardHtml;
+
+        const parityMeta = [
+          { code: "PP", label: "Bleumarin" },
+          { code: "PI", label: "Verde" },
+          { code: "IP", label: "Portocaliu" },
+          { code: "II", label: "Roșu" }
+        ];
+
+        if (legendEl) {
+          legendEl.innerHTML = parityMeta
+            .map(function (item) {
+              return (
+                '<div class="legend-item">' +
+                '<div class="legend-head">' +
+                '<span class="badge-parity parity-' +
+                item.code +
+                '">' +
+                item.code +
+                "</span>" +
+                '<span class="color-name">' +
+                item.label +
+                "</span>" +
+                "</div>" +
+                '<div class="legend-nums">' +
+                groups[item.code].join(" ") +
+                "</div>" +
+                "</div>"
+              );
+            })
+            .join("");
+        }
+
+        if (diffListEl) {
+          const sortedKeys = Array.from(diffGroups.keys()).sort(function (a, b) { return a - b; });
+          diffListEl.innerHTML = sortedKeys
+            .map(function (k) {
+              const list = diffGroups.get(k) || [];
+              if (!list.length) return "";
+              return (
+                '<div class="digit-diff-row">' +
+                '<span class="digit-diff-key">' +
+                k +
+                ":</span>" +
+                '<span class="digit-diff-vals">' +
+                list.join(" ") +
+                "</span>" +
+                "</div>"
+              );
+            })
+            .join("");
+        }
       }
 
       function renderDrawMatrix(mainNumbers, euroNumbers) {
@@ -1189,6 +1499,7 @@
 
       document.addEventListener("DOMContentLoaded", function () {
         registerServiceWorker();
+        renderMatrixTab();
 
         document.getElementById("brand-reload-link").addEventListener("click", reloadPage);
         document.getElementById("install-btn").addEventListener("click", triggerInstall);
@@ -1199,6 +1510,9 @@
         });
         document.getElementById("tab-generator-btn").addEventListener("click", function () {
           switchTab("generator");
+        });
+        document.getElementById("tab-matrix-btn").addEventListener("click", function () {
+          switchTab("matrix");
         });
         document.getElementById("tab-json-btn").addEventListener("click", function () {
           switchTab("json");
