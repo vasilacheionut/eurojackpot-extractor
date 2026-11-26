@@ -206,7 +206,7 @@
       padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     .draw-header {
@@ -226,11 +226,19 @@
       font-weight: 600;
     }
 
-    .balls-wrap {
+    /* Rândurile aliniate pe coloane pentru bile și distanțe */
+    .draw-matrix {
+      display: inline-flex;
+      flex-direction: column;
+      gap: 6px;
+      align-self: flex-start;
+    }
+
+    .balls-line,
+    .diffs-line {
       display: flex;
       align-items: center;
       gap: 6px;
-      flex-wrap: wrap;
     }
 
     .ball {
@@ -244,6 +252,7 @@
       font-weight: 700;
       background-color: var(--secondary);
       color: var(--text);
+      flex-shrink: 0;
     }
 
     .ball.euro {
@@ -252,33 +261,46 @@
     }
 
     .sep {
+      width: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       color: var(--muted);
       font-weight: 700;
-      font-size: 1rem;
-      margin: 0 2px;
+      font-size: 0.95rem;
+      flex-shrink: 0;
     }
 
-    .diffs-box {
-      padding-top: 8px;
-      border-top: 1px dashed var(--border);
-      display: flex;
+    .diff-ball {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      font-size: 0.9rem;
+      justify-content: center;
+      font-size: 0.74rem;
+      font-weight: 700;
       font-variant-numeric: tabular-nums;
-    }
-
-    .diffs-main {
+      background-color: var(--surface-2);
       color: var(--accent);
-      font-weight: 700;
-      letter-spacing: 0.6px;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
-    .diffs-euro {
+    .diff-ball.euro {
       color: var(--euro-bg);
-      font-weight: 700;
-      letter-spacing: 0.4px;
+    }
+
+    .diff-spacer-ball {
+      width: 34px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .diff-spacer-sep {
+      width: 14px;
+      height: 24px;
+      flex-shrink: 0;
     }
 
     /* Tab 2: Generator */
@@ -661,7 +683,7 @@
         }
       }
 
-      /* --- EXTRAGERI & DIFERENȚE --- */
+      /* --- EXTRAGERI & BILE DISTANȚE --- */
       function computeDiffs(nums) {
         const valid = Array.isArray(nums)
           ? nums.map(Number).filter(function (n) { return Number.isFinite(n); })
@@ -673,17 +695,48 @@
         return diffs;
       }
 
-      function renderDiffsBlock(mainNumbers, euroNumbers) {
+      function renderDrawMatrix(mainNumbers, euroNumbers) {
+        const mainHtml = mainNumbers.map(function (n) {
+          return '<span class="ball">' + n + "</span>";
+        }).join("");
+
+        const euroHtml = euroNumbers.map(function (n) {
+          return '<span class="ball euro">' + n + "</span>";
+        }).join("");
+
         const mainDiffs = computeDiffs(mainNumbers);
         const euroDiffs = computeDiffs(euroNumbers);
 
-        const mainCompact = mainDiffs.length ? mainDiffs.join("   ") : "-";
-        const euroCompact = euroDiffs.length ? euroDiffs.join(" ") : "-";
+        // Între 5 bile principale (fiecare 34px + gap 6px) sunt 4 spații;
+        // plasăm câte o bilă mică de 24px centrată între fiecare pereche de bile mari.
+        let mainDiffsHtml = '<span class="diff-spacer-ball" style="width:17px;"></span>';
+        mainDiffs.forEach(function (d, idx) {
+          mainDiffsHtml += '<span class="diff-ball">' + d + "</span>";
+          if (idx < mainDiffs.length - 1) {
+            mainDiffsHtml += '<span class="diff-spacer-ball" style="width:16px;"></span>';
+          }
+        });
+        mainDiffsHtml += '<span class="diff-spacer-ball" style="width:17px;"></span>';
+
+        // Între 2 bile euro este 1 spațiu; plasăm bila mică centrată între ele.
+        let euroDiffsHtml = '<span class="diff-spacer-ball" style="width:17px;"></span>';
+        euroDiffs.forEach(function (d) {
+          euroDiffsHtml += '<span class="diff-ball euro">' + d + "</span>";
+        });
+        euroDiffsHtml += '<span class="diff-spacer-ball" style="width:17px;"></span>';
 
         return `
-          <div class="diffs-box">
-            <span class="diffs-main">${mainCompact}</span>
-            <span class="diffs-euro">+ ${euroCompact}</span>
+          <div class="draw-matrix">
+            <div class="balls-line">
+              ${mainHtml}
+              <span class="sep">+</span>
+              ${euroHtml}
+            </div>
+            <div class="diffs-line">
+              ${mainDiffsHtml}
+              <span class="diff-spacer-sep"></span>
+              ${euroDiffsHtml}
+            </div>
           </div>
         `;
       }
@@ -758,22 +811,13 @@
 
         container.innerHTML = filtered
           .map((d) => {
-            const mainHtml = d.mainNumbers.map((n) => `<span class="ball">${n}</span>`).join("");
-            const euroHtml = d.euroNumbers.map((n) => `<span class="ball euro">${n}</span>`).join("");
-            const diffsHtml = renderDiffsBlock(d.mainNumbers, d.euroNumbers);
-
             return `
               <div class="draw-card">
                 <div class="draw-header">
                   <span class="draw-date">${d.date}</span>
                   <span class="draw-year">${d.year || "-"}</span>
                 </div>
-                <div class="balls-wrap">
-                  ${mainHtml}
-                  <span class="sep">+</span>
-                  ${euroHtml}
-                </div>
-                ${diffsHtml}
+                ${renderDrawMatrix(d.mainNumbers, d.euroNumbers)}
               </div>
             `;
           })
