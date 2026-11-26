@@ -24,6 +24,7 @@
       --secondary: #334155;
       --secondary-hover: #475569;
       --accent: #38bdf8;
+      --digit-diff: #a78bfa;
       --euro-bg: #eab308;
       --euro-text: #0f172a;
     }
@@ -41,6 +42,7 @@
       --secondary: #e2e8f0;
       --secondary-hover: #cbd5e1;
       --accent: #0284c7;
+      --digit-diff: #7c3aed;
       --euro-bg: #eab308;
       --euro-text: #0f172a;
     }
@@ -340,6 +342,21 @@
 
     .diff-ball.euro {
       color: var(--euro-bg);
+    }
+
+    .digit-diff-ball {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      background-color: var(--surface-2);
+      color: var(--digit-diff);
+      border: 1px solid var(--border);
     }
 
     /* Tab 2: Generator */
@@ -769,7 +786,7 @@
         }
       }
 
-      /* --- EXTRAGERI & BILE DISTANȚE --- */
+      /* --- EXTRAGERI, BILE DISTANȚE & DISTANȚĂ CIFRE --- */
       function computeDiffs(nums) {
         const valid = Array.isArray(nums)
           ? nums.map(Number).filter(function (n) { return Number.isFinite(n); })
@@ -781,6 +798,14 @@
         return diffs;
       }
 
+      function computeDigitDiff(num) {
+        const clean = Math.abs(Math.trunc(Number(num)));
+        if (!Number.isFinite(clean)) return 0;
+        const digits = String(clean).split("").map(Number);
+        if (digits.length < 2) return digits[0] || 0;
+        return Math.abs(digits[0] - digits[1]);
+      }
+
       function renderDrawMatrix(mainNumbers, euroNumbers) {
         const mainDiffs = computeDiffs(mainNumbers);
         const euroDiffs = computeDiffs(euroNumbers);
@@ -789,7 +814,9 @@
 
         mainNumbers.forEach(function (n, idx) {
           const col = idx * 2 + 1;
+          const digitDiff = computeDigitDiff(n);
           cellsHtml += '<span class="ball" style="grid-column:' + col + ';grid-row:1;">' + n + "</span>";
+          cellsHtml += '<span class="digit-diff-ball" style="grid-column:' + col + ';grid-row:3;">' + digitDiff + "</span>";
         });
 
         mainDiffs.forEach(function (d, idx) {
