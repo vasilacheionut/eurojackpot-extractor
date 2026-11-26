@@ -207,7 +207,6 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      overflow: hidden;
     }
 
     .draw-header {
@@ -227,34 +226,21 @@
       font-weight: 600;
     }
 
-    /* Grilă compactă, strânsă și aliniată pe distanțele dintre bile */
-    .draw-matrix {
-      display: grid;
-      grid-template-columns:
-        28px 18px
-        28px 18px
-        28px 18px
-        28px 18px
-        28px
-        14px
-        28px 18px
-        28px;
-      row-gap: 5px;
-      column-gap: 2px;
+    .balls-wrap {
+      display: flex;
       align-items: center;
-      justify-items: center;
-      align-self: flex-start;
-      max-width: 100%;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
     .ball {
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       font-weight: 700;
       background-color: var(--secondary);
       color: var(--text);
@@ -268,17 +254,37 @@
     .sep {
       color: var(--muted);
       font-weight: 700;
-      font-size: 0.85rem;
+      font-size: 0.95rem;
+      margin: 0 2px;
+    }
+
+    .diffs-wrap {
+      display: flex;
+      align-items: center;
+      padding-left: 26px;
+      gap: 16px;
+    }
+
+    .diffs-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .diffs-euro-group {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 34px;
     }
 
     .diff-ball {
-      width: 18px;
-      height: 18px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.65rem;
+      font-size: 0.72rem;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
       background-color: var(--surface-2);
@@ -682,37 +688,6 @@
         return diffs;
       }
 
-      function renderDrawMatrix(mainNumbers, euroNumbers) {
-        const mainDiffs = computeDiffs(mainNumbers);
-        const euroDiffs = computeDiffs(euroNumbers);
-
-        let cellsHtml = "";
-
-        mainNumbers.forEach(function (n, idx) {
-          const col = idx * 2 + 1;
-          cellsHtml += '<span class="ball" style="grid-column:' + col + ';grid-row:1;">' + n + "</span>";
-        });
-
-        mainDiffs.forEach(function (d, idx) {
-          const col = idx * 2 + 2;
-          cellsHtml += '<span class="diff-ball" style="grid-column:' + col + ';grid-row:2;">' + d + "</span>";
-        });
-
-        cellsHtml += '<span class="sep" style="grid-column:10;grid-row:1;">+</span>';
-
-        euroNumbers.forEach(function (n, idx) {
-          const col = 11 + idx * 2;
-          cellsHtml += '<span class="ball euro" style="grid-column:' + col + ';grid-row:1;">' + n + "</span>";
-        });
-
-        euroDiffs.forEach(function (d, idx) {
-          const col = 12 + idx * 2;
-          cellsHtml += '<span class="diff-ball euro" style="grid-column:' + col + ';grid-row:2;">' + d + "</span>";
-        });
-
-        return '<div class="draw-matrix">' + cellsHtml + "</div>";
-      }
-
       function dateToSortableInt(dateStr) {
         const m = String(dateStr || "").trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
         if (!m) return 0;
@@ -783,13 +758,35 @@
 
         container.innerHTML = filtered
           .map((d) => {
+            const mainHtml = d.mainNumbers.map((n) => `<span class="ball">${n}</span>`).join("");
+            const euroHtml = d.euroNumbers.map((n) => `<span class="ball euro">${n}</span>`).join("");
+
+            const mainDiffs = computeDiffs(d.mainNumbers);
+            const euroDiffs = computeDiffs(d.euroNumbers);
+
+            const mainDiffsHtml = mainDiffs
+              .map((diff) => `<span class="diff-ball">${diff}</span>`)
+              .join("");
+
+            const euroDiffsHtml = euroDiffs
+              .map((diff) => `<span class="diff-ball euro">${diff}</span>`)
+              .join("");
+
             return `
               <div class="draw-card">
                 <div class="draw-header">
                   <span class="draw-date">${d.date}</span>
                   <span class="draw-year">${d.year || "-"}</span>
                 </div>
-                ${renderDrawMatrix(d.mainNumbers, d.euroNumbers)}
+                <div class="balls-wrap">
+                  ${mainHtml}
+                  <span class="sep">+</span>
+                  ${euroHtml}
+                </div>
+                <div class="diffs-wrap">
+                  <div class="diffs-group">${mainDiffsHtml}</div>
+                  <div class="diffs-euro-group">${euroDiffsHtml}</div>
+                </div>
               </div>
             `;
           })
