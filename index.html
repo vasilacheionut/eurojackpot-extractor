@@ -28,6 +28,7 @@
       --euro-bg: #eab308;
       --euro-text: #0f172a;
       --euro-digit-color: #ffffff;
+      --match-ring: #facc15;
 
       /* Culori paritate pe cifre */
       --pp-bg: #1e3a8a;
@@ -57,6 +58,7 @@
       --euro-bg: #eab308;
       --euro-text: #0f172a;
       --euro-digit-color: #0f172a;
+      --match-ring: #d97706;
 
       --pp-bg: #1e3a8a;
       --pp-fg: #ffffff;
@@ -205,6 +207,13 @@
       color: var(--ii-fg) !important;
     }
 
+    .match-highlight {
+      outline: 2px solid var(--match-ring);
+      outline-offset: 1px;
+      transform: scale(1.06);
+      box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.25);
+    }
+
     /* Tab 1: Extrageri */
     .filter-bar {
       display: flex;
@@ -287,6 +296,39 @@
       background-color: var(--secondary-hover);
     }
 
+    .stats-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 6px 12px;
+      background-color: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.76rem;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .stats-strip strong {
+      color: var(--text);
+    }
+
+    .stats-parity-pills {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
     .draws-list {
       flex: 1;
       min-height: 0;
@@ -358,6 +400,7 @@
       background-color: var(--secondary);
       color: var(--text);
       border: 1px solid rgba(255, 255, 255, 0.14);
+      transition: transform 0.15s ease;
     }
 
     .sep {
@@ -382,6 +425,7 @@
       background-color: var(--surface-2);
       color: var(--accent);
       border: 1px solid var(--border);
+      transition: transform 0.15s ease;
     }
 
     .diff-ball.euro {
@@ -401,6 +445,7 @@
       background-color: var(--surface-2);
       color: var(--digit-diff);
       border: 1px solid var(--border);
+      transition: transform 0.15s ease;
     }
 
     .digit-diff-ball.euro-digit {
@@ -549,11 +594,34 @@
       padding: 14px;
     }
 
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
     .history-title {
       font-size: 0.85rem;
       color: var(--muted);
       font-weight: 700;
-      margin-bottom: 10px;
+    }
+
+    .clear-history-btn {
+      padding: 4px 9px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background-color: var(--surface-2);
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .clear-history-btn:hover {
+      color: var(--text);
+      background-color: var(--secondary);
     }
 
     .history-list {
@@ -576,6 +644,12 @@
 
     .history-list li:last-child {
       border-bottom: none;
+    }
+
+    .history-empty {
+      color: var(--muted);
+      font-size: 0.84rem;
+      padding: 8px 0;
     }
 
     .mini-chip {
@@ -877,6 +951,12 @@
             <button type="button" class="reset-filters-btn" id="reset-filters-btn">Reset</button>
           </div>
         </div>
+
+        <div class="stats-strip" id="stats-strip">
+          <span id="stats-summary">Rezultate: <strong>0</strong></span>
+          <span class="stats-parity-pills" id="stats-parity"></span>
+        </div>
+
         <div class="draws-list" id="draws-list">
           <div class="empty-msg">Se încarcă extragerile...</div>
         </div>
@@ -903,7 +983,10 @@
           </div>
 
           <div class="history-box">
-            <div class="history-title">Ultimele variante generate:</div>
+            <div class="history-header">
+              <span class="history-title">Ultimele variante generate:</span>
+              <button type="button" class="clear-history-btn" id="clear-history-btn">Șterge istoric</button>
+            </div>
             <ul class="history-list" id="history-list"></ul>
           </div>
         </div>
@@ -971,9 +1054,11 @@
     (function () {
       const THEME_STORAGE_KEY = "eurojackpot_theme";
       const FILTERS_STORAGE_KEY = "eurojackpot_filters";
+      const HISTORY_STORAGE_KEY = "eurojackpot_gen_history";
       let allDrawsDesc = [];
       let currentMain = [];
       let currentBonus = [];
+      let genHistory = [];
       let deferredPrompt = null;
 
       function setStatus(msg) {
@@ -1251,7 +1336,12 @@
         }
       }
 
-      function renderDrawMatrix(mainNumbers, euroNumbers) {
+      function renderDrawMatrix(mainNumbers, euroNumbers, highlightOpts) {
+        const opts = highlightOpts || {};
+        const targetMainDiff = opts.mainDiff;
+        const targetDigitDiff = opts.digitDiff;
+        const targetEuroDiff = opts.euroDiff;
+
         const mainDiffs = computeDiffs(mainNumbers);
         const euroDiffs = computeDiffs(euroNumbers);
 
@@ -1260,16 +1350,22 @@
         mainNumbers.forEach(function (n, idx) {
           const col = idx * 2 + 1;
           const digitDiff = computeDigitDiff(n);
+          const isDigitMatch =
+            Number.isFinite(targetDigitDiff) && digitDiff === targetDigitDiff;
+
           cellsHtml +=
             '<span class="ball ' +
             parityClass(n) +
+            (isDigitMatch ? " match-highlight" : "") +
             '" style="grid-column:' +
             col +
             ';grid-row:1;">' +
             n +
             "</span>";
           cellsHtml +=
-            '<span class="digit-diff-ball" style="grid-column:' +
+            '<span class="digit-diff-ball' +
+            (isDigitMatch ? " match-highlight" : "") +
+            '" style="grid-column:' +
             col +
             ';grid-row:3;">' +
             digitDiff +
@@ -1278,7 +1374,15 @@
 
         mainDiffs.forEach(function (d, idx) {
           const col = idx * 2 + 2;
-          cellsHtml += '<span class="diff-ball" style="grid-column:' + col + ';grid-row:2;">' + d + "</span>";
+          const isMainMatch = Number.isFinite(targetMainDiff) && d === targetMainDiff;
+          cellsHtml +=
+            '<span class="diff-ball' +
+            (isMainMatch ? " match-highlight" : "") +
+            '" style="grid-column:' +
+            col +
+            ';grid-row:2;">' +
+            d +
+            "</span>";
         });
 
         cellsHtml += '<span class="sep" style="grid-column:10;grid-row:1;">+</span>';
@@ -1304,7 +1408,15 @@
 
         euroDiffs.forEach(function (d, idx) {
           const col = 12 + idx * 2;
-          cellsHtml += '<span class="diff-ball euro" style="grid-column:' + col + ';grid-row:2;">' + d + "</span>";
+          const isEuroMatch = Number.isFinite(targetEuroDiff) && d === targetEuroDiff;
+          cellsHtml +=
+            '<span class="diff-ball euro' +
+            (isEuroMatch ? " match-highlight" : "") +
+            '" style="grid-column:' +
+            col +
+            ';grid-row:2;">' +
+            d +
+            "</span>";
         });
 
         return '<div class="draw-matrix">' + cellsHtml + "</div>";
@@ -1432,6 +1544,60 @@
         renderDraws();
       }
 
+      function updateStatsStrip(filteredDraws, filterState) {
+        const summaryEl = document.getElementById("stats-summary");
+        const parityEl = document.getElementById("stats-parity");
+        if (!summaryEl || !parityEl) return;
+
+        const counts = { PP: 0, PI: 0, IP: 0, II: 0 };
+        let hitsCount = 0;
+
+        filteredDraws.forEach(function (d) {
+          (d.mainNumbers || []).forEach(function (n) {
+            const code = getDigitParityCode(n);
+            if (counts[code] !== undefined) counts[code]++;
+            if (filterState.digitDiff !== "ALL" && computeDigitDiff(n) === Number(filterState.digitDiff)) {
+              hitsCount++;
+            }
+          });
+          if (filterState.mainDiff !== "ALL") {
+            hitsCount += computeDiffs(d.mainNumbers).filter(function (x) {
+              return x === Number(filterState.mainDiff);
+            }).length;
+          }
+          if (filterState.euroDiff !== "ALL") {
+            hitsCount += computeDiffs(d.euroNumbers).filter(function (x) {
+              return x === Number(filterState.euroDiff);
+            }).length;
+          }
+        });
+
+        const hasDiffFilter =
+          filterState.mainDiff !== "ALL" ||
+          filterState.digitDiff !== "ALL" ||
+          filterState.euroDiff !== "ALL";
+
+        summaryEl.innerHTML =
+          "Extrageri: <strong>" +
+          filteredDraws.length +
+          "</strong>" +
+          (hasDiffFilter ? " · Apariții: <strong>" + hitsCount + "</strong>" : "");
+
+        parityEl.innerHTML = ["PP", "PI", "IP", "II"]
+          .map(function (code) {
+            return (
+              '<span class="stat-pill parity-' +
+              code +
+              '">' +
+              code +
+              " " +
+              counts[code] +
+              "</span>"
+            );
+          })
+          .join("");
+      }
+
       function renderDraws() {
         const container = document.getElementById("draws-list");
         const selectedYear = document.getElementById("year-filter").value;
@@ -1467,10 +1633,23 @@
           return true;
         });
 
+        updateStatsStrip(filtered, {
+          year: selectedYear,
+          mainDiff: selectedMainDiff,
+          digitDiff: selectedDigitDiff,
+          euroDiff: selectedEuroDiff
+        });
+
         if (!filtered.length) {
           container.innerHTML = '<div class="empty-msg">Nu există extrageri pentru filtrele selectate.</div>';
           return;
         }
+
+        const highlightOpts = {
+          mainDiff: selectedMainDiff !== "ALL" ? Number(selectedMainDiff) : NaN,
+          digitDiff: selectedDigitDiff !== "ALL" ? Number(selectedDigitDiff) : NaN,
+          euroDiff: selectedEuroDiff !== "ALL" ? Number(selectedEuroDiff) : NaN
+        };
 
         container.innerHTML = filtered
           .map((d) => {
@@ -1480,7 +1659,7 @@
                   <span class="draw-date">${d.date}</span>
                   <span class="draw-year">${d.year || "-"}</span>
                 </div>
-                ${renderDrawMatrix(d.mainNumbers, d.euroNumbers)}
+                ${renderDrawMatrix(d.mainNumbers, d.euroNumbers, highlightOpts)}
               </div>
             `;
           })
@@ -1633,34 +1812,100 @@
           .join("");
       }
 
-      function addToHistory(main, bonus) {
+      function saveGenHistory() {
+        try {
+          window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(genHistory.slice(0, 10)));
+        } catch (e) {
+          // ignoră dacă localStorage nu este accesibil
+        }
+      }
+
+      function renderHistoryList() {
         const list = document.getElementById("history-list");
         if (!list) return;
 
-        const li = document.createElement("li");
-        const mainHtml = main
-          .map(function (n) {
-            return '<span class="mini-chip ' + parityClass(n) + '">' + formatNumber(n) + "</span>";
-          })
-          .join("");
-
-        const bonusHtml = bonus
-          .map(function (n) {
-            return '<span class="mini-chip ' + parityClass(n) + '">' + formatNumber(n) + "</span>";
-          })
-          .join("");
-
-        li.innerHTML =
-          '<span class="history-group">' +
-          mainHtml +
-          '</span><span class="history-group">★ ' +
-          bonusHtml +
-          "</span>";
-        list.insertBefore(li, list.firstChild);
-
-        while (list.children.length > 10) {
-          list.removeChild(list.lastChild);
+        if (!genHistory.length) {
+          list.innerHTML = '<li class="history-empty">Nicio variantă salvată în istoric.</li>';
+          return;
         }
+
+        list.innerHTML = genHistory
+          .slice(0, 10)
+          .map(function (item) {
+            const main = Array.isArray(item.main) ? item.main : [];
+            const bonus = Array.isArray(item.bonus) ? item.bonus : [];
+
+            const mainHtml = main
+              .map(function (n) {
+                return '<span class="mini-chip ' + parityClass(n) + '">' + formatNumber(n) + "</span>";
+              })
+              .join("");
+
+            const bonusHtml = bonus
+              .map(function (n) {
+                return '<span class="mini-chip ' + parityClass(n) + '">' + formatNumber(n) + "</span>";
+              })
+              .join("");
+
+            return (
+              "<li>" +
+              '<span class="history-group">' +
+              mainHtml +
+              '</span><span class="history-group">★ ' +
+              bonusHtml +
+              "</span>" +
+              "</li>"
+            );
+          })
+          .join("");
+      }
+
+      function initGenHistory() {
+        try {
+          const raw = window.localStorage.getItem(HISTORY_STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              genHistory = parsed.slice(0, 10);
+            }
+          }
+        } catch (e) {
+          genHistory = [];
+        }
+
+        if (genHistory.length) {
+          currentMain = genHistory[0].main.slice();
+          currentBonus = genHistory[0].bonus.slice();
+          renderGenBalls("main-numbers", currentMain);
+          renderGenBalls("bonus-numbers", currentBonus);
+          renderGenDiffs("main-diffs", currentMain, false);
+          renderGenDiffs("bonus-diffs", currentBonus, true);
+          renderHistoryList();
+        } else {
+          generateCombination();
+        }
+      }
+
+      function addToHistory(main, bonus) {
+        genHistory.unshift({
+          main: main.slice(),
+          bonus: bonus.slice()
+        });
+        if (genHistory.length > 10) {
+          genHistory = genHistory.slice(0, 10);
+        }
+        saveGenHistory();
+        renderHistoryList();
+      }
+
+      function clearGenHistory() {
+        genHistory = [];
+        try {
+          window.localStorage.removeItem(HISTORY_STORAGE_KEY);
+        } catch (e) {
+          // ignoră dacă localStorage nu este accesibil
+        }
+        renderHistoryList();
       }
 
       function generateCombination() {
@@ -1739,8 +1984,9 @@
 
         document.getElementById("generate-btn").addEventListener("click", generateCombination);
         document.getElementById("copy-gen-btn").addEventListener("click", copyGenResult);
+        document.getElementById("clear-history-btn").addEventListener("click", clearGenHistory);
 
-        generateCombination();
+        initGenHistory();
         loadJsonFile();
       });
     })();
