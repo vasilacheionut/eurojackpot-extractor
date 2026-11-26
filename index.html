@@ -243,8 +243,8 @@
 
     .diff-filters-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr auto;
-      gap: 8px;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 6px;
       align-items: center;
     }
 
@@ -252,29 +252,33 @@
       display: flex;
       flex-direction: column;
       gap: 3px;
+      min-width: 0;
     }
 
     .diff-filter-item label {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
       color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .diff-filter-item select {
       width: 100%;
       min-width: 0;
-      padding: 6px 8px;
-      font-size: 0.85rem;
+      padding: 6px 6px;
+      font-size: 0.82rem;
     }
 
     .reset-filters-btn {
       align-self: flex-end;
-      padding: 7px 10px;
+      padding: 7px 9px;
       border-radius: 8px;
       border: 1px solid var(--border);
       background-color: var(--secondary);
       color: var(--text);
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 700;
       cursor: pointer;
     }
@@ -853,8 +857,14 @@
           </div>
           <div class="diff-filters-grid">
             <div class="diff-filter-item">
-              <label for="main-diff-filter">Dist. 4 bile (5 nr.)</label>
+              <label for="main-diff-filter">Dist. 4 bile</label>
               <select id="main-diff-filter">
+                <option value="ALL">Toate</option>
+              </select>
+            </div>
+            <div class="diff-filter-item">
+              <label for="digit-diff-filter">Dist. cifre (5 nr.)</label>
+              <select id="digit-diff-filter">
                 <option value="ALL">Toate</option>
               </select>
             </div>
@@ -1010,15 +1020,16 @@
       function readSavedFilters() {
         try {
           const raw = window.localStorage.getItem(FILTERS_STORAGE_KEY);
-          if (!raw) return { year: "ALL", mainDiff: "ALL", euroDiff: "ALL" };
+          if (!raw) return { year: "ALL", mainDiff: "ALL", digitDiff: "ALL", euroDiff: "ALL" };
           const parsed = JSON.parse(raw);
           return {
             year: parsed && parsed.year ? String(parsed.year) : "ALL",
             mainDiff: parsed && parsed.mainDiff ? String(parsed.mainDiff) : "ALL",
+            digitDiff: parsed && parsed.digitDiff ? String(parsed.digitDiff) : "ALL",
             euroDiff: parsed && parsed.euroDiff ? String(parsed.euroDiff) : "ALL"
           };
         } catch (e) {
-          return { year: "ALL", mainDiff: "ALL", euroDiff: "ALL" };
+          return { year: "ALL", mainDiff: "ALL", digitDiff: "ALL", euroDiff: "ALL" };
         }
       }
 
@@ -1026,6 +1037,7 @@
         const payload = {
           year: document.getElementById("year-filter").value || "ALL",
           mainDiff: document.getElementById("main-diff-filter").value || "ALL",
+          digitDiff: document.getElementById("digit-diff-filter").value || "ALL",
           euroDiff: document.getElementById("euro-diff-filter").value || "ALL"
         };
         try {
@@ -1112,6 +1124,13 @@
       function computeDigitDiff(num) {
         const [c1, c2] = getTwoDigits(num);
         return Math.abs(c1 - c2);
+      }
+
+      function computeMainDigitDiffs(nums) {
+        const valid = Array.isArray(nums)
+          ? nums.map(Number).filter(function (n) { return Number.isFinite(n); })
+          : [];
+        return valid.map(computeDigitDiff);
       }
 
       function getDigitParityCode(num) {
@@ -1342,14 +1361,19 @@
 
       function populateDiffFilters(draws) {
         const mainSelect = document.getElementById("main-diff-filter");
+        const digitSelect = document.getElementById("digit-diff-filter");
         const euroSelect = document.getElementById("euro-diff-filter");
 
         const mainSet = new Set();
+        const digitSet = new Set();
         const euroSet = new Set();
 
         draws.forEach(function (d) {
           computeDiffs(d.mainNumbers).forEach(function (val) {
             mainSet.add(val);
+          });
+          computeMainDigitDiffs(d.mainNumbers).forEach(function (val) {
+            digitSet.add(val);
           });
           computeDiffs(d.euroNumbers).forEach(function (val) {
             euroSet.add(val);
@@ -1357,6 +1381,7 @@
         });
 
         const sortedMain = Array.from(mainSet).sort(function (a, b) { return a - b; });
+        const sortedDigit = Array.from(digitSet).sort(function (a, b) { return a - b; });
         const sortedEuro = Array.from(euroSet).sort(function (a, b) { return a - b; });
 
         mainSelect.innerHTML = '<option value="ALL">Toate</option>';
@@ -1365,6 +1390,14 @@
           opt.value = String(val);
           opt.textContent = "Dist. " + val;
           mainSelect.appendChild(opt);
+        });
+
+        digitSelect.innerHTML = '<option value="ALL">Toate</option>';
+        sortedDigit.forEach(function (val) {
+          const opt = document.createElement("option");
+          opt.value = String(val);
+          opt.textContent = "Cifre " + val;
+          digitSelect.appendChild(opt);
         });
 
         euroSelect.innerHTML = '<option value="ALL">Toate</option>';
@@ -1380,6 +1413,7 @@
         const saved = readSavedFilters();
         setSelectIfAvailable(document.getElementById("year-filter"), saved.year);
         setSelectIfAvailable(document.getElementById("main-diff-filter"), saved.mainDiff);
+        setSelectIfAvailable(document.getElementById("digit-diff-filter"), saved.digitDiff);
         setSelectIfAvailable(document.getElementById("euro-diff-filter"), saved.euroDiff);
         saveCurrentFilters();
       }
@@ -1392,6 +1426,7 @@
       function resetDiffAndYearFilters() {
         document.getElementById("year-filter").value = "ALL";
         document.getElementById("main-diff-filter").value = "ALL";
+        document.getElementById("digit-diff-filter").value = "ALL";
         document.getElementById("euro-diff-filter").value = "ALL";
         saveCurrentFilters();
         renderDraws();
@@ -1401,6 +1436,7 @@
         const container = document.getElementById("draws-list");
         const selectedYear = document.getElementById("year-filter").value;
         const selectedMainDiff = document.getElementById("main-diff-filter").value;
+        const selectedDigitDiff = document.getElementById("digit-diff-filter").value;
         const selectedEuroDiff = document.getElementById("euro-diff-filter").value;
 
         const filtered = allDrawsDesc.filter(function (d) {
@@ -1411,6 +1447,13 @@
             const targetMain = Number(selectedMainDiff);
             const mDiffs = computeDiffs(d.mainNumbers);
             if (!mDiffs.includes(targetMain)) {
+              return false;
+            }
+          }
+          if (selectedDigitDiff !== "ALL") {
+            const targetDigit = Number(selectedDigitDiff);
+            const dDiffs = computeMainDigitDiffs(d.mainNumbers);
+            if (!dDiffs.includes(targetDigit)) {
               return false;
             }
           }
@@ -1687,6 +1730,7 @@
 
         document.getElementById("year-filter").addEventListener("change", handleFilterChange);
         document.getElementById("main-diff-filter").addEventListener("change", handleFilterChange);
+        document.getElementById("digit-diff-filter").addEventListener("change", handleFilterChange);
         document.getElementById("euro-diff-filter").addEventListener("change", handleFilterChange);
         document.getElementById("reset-filters-btn").addEventListener("click", resetDiffAndYearFilters);
 
