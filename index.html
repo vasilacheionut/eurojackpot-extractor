@@ -258,6 +258,42 @@
       margin: 0 2px;
     }
 
+    .diffs-box {
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.84rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .diffs-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .diffs-main {
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+
+    .diffs-euro {
+      color: var(--euro-bg);
+      font-weight: 700;
+    }
+
+    .diffs-detail {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
     /* Tab 2: Generator */
     .generator-body {
       flex: 1;
@@ -638,7 +674,47 @@
         }
       }
 
-      /* --- EXTRAGERI & JSON --- */
+      /* --- EXTRAGERI & CALCULE DIFERENȚE --- */
+      function computeDiffs(nums) {
+        const valid = Array.isArray(nums)
+          ? nums.map(Number).filter(function (n) { return Number.isFinite(n); })
+          : [];
+        const diffs = [];
+        for (let i = 0; i < valid.length - 1; i++) {
+          diffs.push({
+            a: valid[i],
+            b: valid[i + 1],
+            diff: Math.abs(valid[i + 1] - valid[i])
+          });
+        }
+        return diffs;
+      }
+
+      function renderDiffsBlock(mainNumbers, euroNumbers) {
+        const mainDiffs = computeDiffs(mainNumbers);
+        const euroDiffs = computeDiffs(euroNumbers);
+
+        const mainCompact = mainDiffs.map(function (d) { return d.diff; }).join("   ");
+        const euroCompact = euroDiffs.map(function (d) { return d.diff; }).join(" ");
+
+        const mainExpr = mainDiffs
+          .map(function (d) { return d.a + " - " + d.b + " = " + d.diff; })
+          .join(" | ");
+        const euroExpr = euroDiffs
+          .map(function (d) { return d.a + " - " + d.b + " = " + d.diff; })
+          .join(" | ");
+
+        return `
+          <div class="diffs-box">
+            <div class="diffs-row">
+              <span class="diffs-main">${mainCompact || "-"}</span>
+              <span class="diffs-euro">+ ${euroCompact || "-"}</span>
+            </div>
+            <div class="diffs-detail">${mainExpr}${euroExpr ? " • " + euroExpr : ""}</div>
+          </div>
+        `;
+      }
+
       function dateToSortableInt(dateStr) {
         const m = String(dateStr || "").trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
         if (!m) return 0;
@@ -711,6 +787,7 @@
           .map((d) => {
             const mainHtml = d.mainNumbers.map((n) => `<span class="ball">${n}</span>`).join("");
             const euroHtml = d.euroNumbers.map((n) => `<span class="ball euro">${n}</span>`).join("");
+            const diffsHtml = renderDiffsBlock(d.mainNumbers, d.euroNumbers);
 
             return `
               <div class="draw-card">
@@ -723,6 +800,7 @@
                   <span class="sep">+</span>
                   ${euroHtml}
                 </div>
+                ${diffsHtml}
               </div>
             `;
           })
