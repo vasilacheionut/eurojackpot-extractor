@@ -807,8 +807,8 @@
       min-height: 0;
       display: flex;
       flex-direction: column;
-      padding: 12px 12px 16px;
-      gap: 10px;
+      padding: 10px 12px 12px;
+      gap: 8px;
     }
 
     textarea {
@@ -834,10 +834,10 @@
 
     .action-btn {
       flex: 1;
-      padding: 12px;
+      padding: 11px;
       border: none;
       border-radius: 10px;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       font-weight: 700;
       cursor: pointer;
     }
@@ -853,9 +853,10 @@
     }
 
     .status {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       color: var(--accent);
-      min-height: 18px;
+      min-height: 16px;
+      line-height: 1.2;
       flex-shrink: 0;
     }
 
@@ -1553,7 +1554,7 @@
         let hitsCount = 0;
 
         filteredDraws.forEach(function (d) {
-          (d.mainNumbers || []).forEach(function (n) {
+          (d.mainNumbers || []).slice(0, 5).forEach(function (n) {
             const code = getDigitParityCode(n);
             if (counts[code] !== undefined) counts[code]++;
             if (filterState.digitDiff !== "ALL" && computeDigitDiff(n) === Number(filterState.digitDiff)) {
