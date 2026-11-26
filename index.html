@@ -207,6 +207,7 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      overflow: hidden;
     }
 
     .draw-header {
@@ -226,32 +227,34 @@
       font-weight: 600;
     }
 
+    /* Grilă compactă, strânsă și aliniată pe distanțele dintre bile */
     .draw-matrix {
       display: grid;
       grid-template-columns:
-        34px 24px
-        34px 24px
-        34px 24px
-        34px 24px
-        34px
-        18px
-        34px 24px
-        34px;
-      row-gap: 6px;
-      column-gap: 4px;
+        28px 18px
+        28px 18px
+        28px 18px
+        28px 18px
+        28px
+        14px
+        28px 18px
+        28px;
+      row-gap: 5px;
+      column-gap: 2px;
       align-items: center;
       justify-items: center;
       align-self: flex-start;
+      max-width: 100%;
     }
 
     .ball {
-      width: 34px;
-      height: 34px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       font-weight: 700;
       background-color: var(--secondary);
       color: var(--text);
@@ -265,17 +268,17 @@
     .sep {
       color: var(--muted);
       font-weight: 700;
-      font-size: 0.95rem;
+      font-size: 0.85rem;
     }
 
     .diff-ball {
-      width: 24px;
-      height: 24px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.74rem;
+      font-size: 0.65rem;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
       background-color: var(--surface-2);
