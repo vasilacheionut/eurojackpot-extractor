@@ -226,7 +226,6 @@
       font-weight: 600;
     }
 
-    /* Rândurile aliniate pe coloane pentru bile și distanțe */
     .draw-matrix {
       display: inline-flex;
       flex-direction: column;
@@ -238,6 +237,9 @@
     .diffs-line {
       display: flex;
       align-items: center;
+    }
+
+    .balls-line {
       gap: 6px;
     }
 
@@ -291,16 +293,10 @@
       color: var(--euro-bg);
     }
 
-    .diff-spacer-ball {
-      width: 34px;
+    .diff-spacer {
       height: 24px;
       flex-shrink: 0;
-    }
-
-    .diff-spacer-sep {
-      width: 14px;
-      height: 24px;
-      flex-shrink: 0;
+      display: inline-block;
     }
 
     /* Tab 2: Generator */
@@ -696,6 +692,15 @@
       }
 
       function renderDrawMatrix(mainNumbers, euroNumbers) {
+        // Dimensiuni exacte:
+        // Bila mare = 34px, gap = 6px => pas centru-la-centru = 40px.
+        // Bila mică distanță = 24px => jumătate = 12px.
+        const ballSize = 34;
+        const gap = 6;
+        const step = ballSize + gap; // 40px
+        const diffSize = 24;
+        const halfDiff = diffSize / 2; // 12px
+
         const mainHtml = mainNumbers.map(function (n) {
           return '<span class="ball">' + n + "</span>";
         }).join("");
@@ -707,23 +712,47 @@
         const mainDiffs = computeDiffs(mainNumbers);
         const euroDiffs = computeDiffs(euroNumbers);
 
-        // Între 5 bile principale (fiecare 34px + gap 6px) sunt 4 spații;
-        // plasăm câte o bilă mică de 24px centrată între fiecare pereche de bile mari.
-        let mainDiffsHtml = '<span class="diff-spacer-ball" style="width:17px;"></span>';
-        mainDiffs.forEach(function (d, idx) {
-          mainDiffsHtml += '<span class="diff-ball">' + d + "</span>";
-          if (idx < mainDiffs.length - 1) {
-            mainDiffsHtml += '<span class="diff-spacer-ball" style="width:16px;"></span>';
+        // Centrul primului spațiu (între bila 1 și bila 2) este la step + step/2 = 40 + 20 = 60px.
+        // Întrucât diff-ball are 24px, marginea stângă a primei bile de distanță este 60 - 12 = 48px.
+        let mainDiffsHtml = "";
+        if (mainDiffs.length > 0) {
+          const firstLead = step + step / 2 - halfDiff; // 48px
+          mainDiffsHtml += '<span class="diff-spacer" style="width:' + firstLead + 'px;"></span>';
+          mainDiffs.forEach(function (d, idx) {
+            mainDiffsHtml += '<span class="diff-ball">' + d + "</span>";
+            if (idx < mainDiffs.length - 1) {
+              // De la sfârșitul acestei bile (48 + 24 = 72) până la următoarea (88) => 16px
+              const between = step - diffSize; // 16px
+              mainDiffsHtml += '<span class="diff-spacer" style="width:' + between + 'px;"></span>';
+            }
+          });
+          // După ultima bilă de distanță, completăm până la finalul celor 5 bile mari:
+          // Finalul bilei 5 = 5*34 + 4*6 = 170 + 24 = 194px.
+          // Sfârșitul ultimei diff-ball (pentru 4 diferențe) = 48 + 4*24 + 3*16 = 48 + 96 + 48 = 192px -> 2px.
+          const totalMainWidth = mainNumbers.length * ballSize + Math.max(0, mainNumbers.length - 1) * gap;
+          const currentMainEnd = firstLead + mainDiffs.length * diffSize + Math.max(0, mainDiffs.length - 1) * (step - diffSize);
+          const tailMain = Math.max(0, totalMainWidth - currentMainEnd);
+          if (tailMain > 0) {
+            mainDiffsHtml += '<span class="diff-spacer" style="width:' + tailMain + 'px;"></span>';
           }
-        });
-        mainDiffsHtml += '<span class="diff-spacer-ball" style="width:17px;"></span>';
+        }
 
-        // Între 2 bile euro este 1 spațiu; plasăm bila mică centrată între ele.
-        let euroDiffsHtml = '<span class="diff-spacer-ball" style="width:17px;"></span>';
-        euroDiffs.forEach(function (d) {
-          euroDiffsHtml += '<span class="diff-ball euro">' + d + "</span>";
-        });
-        euroDiffsHtml += '<span class="diff-spacer-ball" style="width:17px;"></span>';
+        // Separatorul '+' de sus are 14px lățime și 6px gap stânga + 6px gap dreapta = 26px total pe linia de sus
+        const sepSlotWidth = gap + 14 + gap; // 26px
+
+        // Pentru cele 2 stele: centrul spațiului dintre steaua 1 și steaua 2 este la ballSize/2 + step/2 = 17 + 20 = 37px
+        // de la începutul primei stele. Marginea stângă = 37 - 12 = 25px.
+        let euroDiffsHtml = "";
+        if (euroDiffs.length > 0) {
+          const euroLead = ballSize / 2 + step / 2 - halfDiff; // 25px
+          euroDiffsHtml += '<span class="diff-spacer" style="width:' + euroLead + 'px;"></span>';
+          euroDiffs.forEach(function (d, idx) {
+            euroDiffsHtml += '<span class="diff-ball euro">' + d + "</span>";
+            if (idx < euroDiffs.length - 1) {
+              euroDiffsHtml += '<span class="diff-spacer" style="width:' + (step - diffSize) + 'px;"></span>';
+            }
+          });
+        }
 
         return `
           <div class="draw-matrix">
@@ -734,7 +763,7 @@
             </div>
             <div class="diffs-line">
               ${mainDiffsHtml}
-              <span class="diff-spacer-sep"></span>
+              <span class="diff-spacer" style="width:${sepSlotWidth}px;"></span>
               ${euroDiffsHtml}
             </div>
           </div>
