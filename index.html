@@ -262,36 +262,23 @@
       padding-top: 8px;
       border-top: 1px dashed var(--border);
       display: flex;
-      flex-direction: column;
-      gap: 4px;
-      font-size: 0.84rem;
-      color: var(--muted);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .diffs-row {
-      display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 0.9rem;
+      font-variant-numeric: tabular-nums;
     }
 
     .diffs-main {
       color: var(--accent);
       font-weight: 700;
-      letter-spacing: 0.4px;
+      letter-spacing: 0.6px;
     }
 
     .diffs-euro {
       color: var(--euro-bg);
       font-weight: 700;
-    }
-
-    .diffs-detail {
-      font-size: 0.78rem;
-      color: var(--muted);
-      line-height: 1.35;
+      letter-spacing: 0.4px;
     }
 
     /* Tab 2: Generator */
@@ -674,18 +661,14 @@
         }
       }
 
-      /* --- EXTRAGERI & CALCULE DIFERENȚE --- */
+      /* --- EXTRAGERI & DIFERENȚE --- */
       function computeDiffs(nums) {
         const valid = Array.isArray(nums)
           ? nums.map(Number).filter(function (n) { return Number.isFinite(n); })
           : [];
         const diffs = [];
         for (let i = 0; i < valid.length - 1; i++) {
-          diffs.push({
-            a: valid[i],
-            b: valid[i + 1],
-            diff: Math.abs(valid[i + 1] - valid[i])
-          });
+          diffs.push(Math.abs(valid[i + 1] - valid[i]));
         }
         return diffs;
       }
@@ -694,23 +677,13 @@
         const mainDiffs = computeDiffs(mainNumbers);
         const euroDiffs = computeDiffs(euroNumbers);
 
-        const mainCompact = mainDiffs.map(function (d) { return d.diff; }).join("   ");
-        const euroCompact = euroDiffs.map(function (d) { return d.diff; }).join(" ");
-
-        const mainExpr = mainDiffs
-          .map(function (d) { return d.a + " - " + d.b + " = " + d.diff; })
-          .join(" | ");
-        const euroExpr = euroDiffs
-          .map(function (d) { return d.a + " - " + d.b + " = " + d.diff; })
-          .join(" | ");
+        const mainCompact = mainDiffs.length ? mainDiffs.join("   ") : "-";
+        const euroCompact = euroDiffs.length ? euroDiffs.join(" ") : "-";
 
         return `
           <div class="diffs-box">
-            <div class="diffs-row">
-              <span class="diffs-main">${mainCompact || "-"}</span>
-              <span class="diffs-euro">+ ${euroCompact || "-"}</span>
-            </div>
-            <div class="diffs-detail">${mainExpr}${euroExpr ? " • " + euroExpr : ""}</div>
+            <span class="diffs-main">${mainCompact}</span>
+            <span class="diffs-euro">+ ${euroCompact}</span>
           </div>
         `;
       }
