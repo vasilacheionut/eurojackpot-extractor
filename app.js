@@ -187,6 +187,28 @@
     return "parity-" + getDigitParityCode(num);
   }
 
+  function getMainColorsSummary(mainNumbers) {
+    const orderedCodes = ["PP", "PI", "IP", "II"];
+    const presentSet = new Set();
+
+    (mainNumbers || []).slice(0, 5).forEach(function (n) {
+      const code = getDigitParityCode(n);
+      if (orderedCodes.includes(code)) {
+        presentSet.add(code);
+      }
+    });
+
+    const presentList = orderedCodes.filter(function (c) {
+      return presentSet.has(c);
+    });
+
+    return {
+      count: presentList.length,
+      total: 4,
+      codesText: presentList.length ? presentList.join(" ") : "-"
+    };
+  }
+
   /* --- PANOU 1-50, PARITATE PP/PI/IP/II & LISTĂ DISTANȚE CIFRE --- */
   function renderMatrixTab() {
     const boardEl = document.getElementById("board-1-50");
@@ -611,11 +633,15 @@
 
     container.innerHTML = filtered
       .map((d) => {
+        const colorInfo = getMainColorsSummary(d.mainNumbers);
         return `
           <div class="draw-card">
             <div class="draw-header">
               <span class="draw-date">${d.date}</span>
-              <span class="draw-year">${d.year || "-"}</span>
+              <div class="draw-meta-right">
+                <span class="draw-colors-tag">Culori ${colorInfo.count}/${colorInfo.total}: ${colorInfo.codesText}</span>
+                <span class="draw-year">${d.year || "-"}</span>
+              </div>
             </div>
             ${renderDrawMatrix(d.mainNumbers, d.euroNumbers, highlightOpts)}
           </div>
