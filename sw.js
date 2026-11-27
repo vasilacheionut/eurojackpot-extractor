@@ -1,4 +1,4 @@
-const CACHE_NAME = "eurojackpot-pwa-v2";
+const CACHE_NAME = "eurojackpot-pwa-v3";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -32,7 +32,6 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
 
-  // Pentru draws.json: încercăm întâi rețeaua, apoi cache-ul dacă suntem offline
   if (url.pathname.endsWith("/draws.json") || url.pathname.endsWith("draws.json")) {
     event.respondWith(
       fetch(event.request)
@@ -46,7 +45,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pentru restul resurselor: cache-first cu actualizare în fundal
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const networkFetch = fetch(event.request)
