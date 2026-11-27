@@ -358,11 +358,29 @@ select {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
 
 .draw-date {
   font-size: 1rem;
   font-weight: 700;
+}
+
+.draw-meta-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.draw-colors-tag {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--accent);
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
 }
 
 .draw-year {
@@ -910,4 +928,3 @@ textarea {
     align-content: start;
   }
 }
-
