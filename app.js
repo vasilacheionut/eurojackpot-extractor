@@ -1,5 +1,7 @@
 (function () {
   const THEME_STORAGE_KEY = "eurojackpot_theme";
+  const ZOOM_STORAGE_KEY = "eurojackpot_zoom";
+  const ZOOM_LEVELS = [1, 1.15, 1.3];
   const FILTERS_STORAGE_KEY = "eurojackpot_filters";
   const HISTORY_STORAGE_KEY = "eurojackpot_gen_history";
   const DRAWS_CACHE_KEY = "eurojackpot_draws_cache";
@@ -10,6 +12,7 @@
   let genHistory = [];
   let deferredPrompt = null;
   let currentOnlineState = typeof navigator.onLine === "boolean" ? navigator.onLine : true;
+  let currentZoom = 1;
 
   function applyDrawsWordColor(isOnline) {
     currentOnlineState = Boolean(isOnline);
@@ -26,6 +29,48 @@
   function reloadPage(e) {
     if (e) e.preventDefault();
     window.location.reload();
+  }
+
+  function normalizeZoom(val) {
+    const num = Number(val);
+    const matched = ZOOM_LEVELS.find(function (z) {
+      return Math.abs(z - num) < 0.01;
+    });
+    return matched || 1;
+  }
+
+  function applyZoom(zoomVal) {
+    const normalized = normalizeZoom(zoomVal);
+    currentZoom = normalized;
+    document.documentElement.style.setProperty("--zoom-scale", String(normalized));
+    const btn = document.getElementById("zoom-btn");
+    if (btn) {
+      btn.textContent = "Zoom: " + Math.round(normalized * 100) + "%";
+    }
+    return normalized;
+  }
+
+  function initZoom() {
+    let saved = null;
+    try {
+      saved = window.localStorage.getItem(ZOOM_STORAGE_KEY);
+    } catch (e) {
+      saved = null;
+    }
+    applyZoom(saved || 1);
+  }
+
+  function cycleZoom() {
+    const idx = ZOOM_LEVELS.findIndex(function (z) {
+      return Math.abs(z - currentZoom) < 0.01;
+    });
+    const nextIdx = idx === -1 ? 0 : (idx + 1) % ZOOM_LEVELS.length;
+    const nextZoom = applyZoom(ZOOM_LEVELS[nextIdx]);
+    try {
+      window.localStorage.setItem(ZOOM_STORAGE_KEY, String(nextZoom));
+    } catch (e) {
+      // ignoră dacă localStorage nu este accesibil
+    }
   }
 
   function applyTheme(theme) {
@@ -1019,12 +1064,14 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     applyDrawsWordColor(currentOnlineState);
+    initZoom();
     initTheme();
     registerServiceWorker();
     renderMatrixTab();
 
     document.getElementById("brand-reload-link").addEventListener("click", reloadPage);
     document.getElementById("install-btn").addEventListener("click", triggerInstall);
+    document.getElementById("zoom-btn").addEventListener("click", cycleZoom);
     document.getElementById("theme-btn").addEventListener("click", toggleTheme);
 
     document.getElementById("tab-draws-btn").addEventListener("click", function () {
