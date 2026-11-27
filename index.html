@@ -29,6 +29,8 @@
       --euro-text: #0f172a;
       --euro-digit-color: #ffffff;
       --match-ring: #facc15;
+      --online-fg: #22c55e;
+      --offline-fg: #f59e0b;
 
       /* Culori paritate pe cifre */
       --pp-bg: #1e3a8a;
@@ -59,6 +61,8 @@
       --euro-text: #0f172a;
       --euro-digit-color: #0f172a;
       --match-ring: #d97706;
+      --online-fg: #15803d;
+      --offline-fg: #b45309;
 
       --pp-bg: #1e3a8a;
       --pp-fg: #ffffff;
@@ -154,16 +158,40 @@
 
     .meta-strip {
       padding: 8px 16px;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       color: var(--muted);
       background-color: var(--surface-2);
       border-bottom: 1px solid var(--border);
       line-height: 1.4;
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .meta-strip strong {
       color: var(--text);
+    }
+
+    .net-badge {
+      font-weight: 800;
+      font-size: 0.74rem;
+      letter-spacing: 0.04em;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background-color: var(--surface);
+      white-space: nowrap;
+    }
+
+    .net-badge.online {
+      color: var(--online-fg);
+    }
+
+    .net-badge.offline {
+      color: var(--offline-fg);
     }
 
     .main-content {
@@ -918,7 +946,10 @@
       </div>
     </header>
 
-    <div class="meta-strip" id="meta-info">Se încarcă draws.json...</div>
+    <div class="meta-strip" id="meta-info">
+      <span id="meta-text">Se încarcă draws.json...</span>
+      <span class="net-badge" id="net-badge">ONLINE</span>
+    </div>
 
     <main class="main-content">
       <!-- TAB 1: EXTRAGERI -->
@@ -1056,11 +1087,26 @@
       const THEME_STORAGE_KEY = "eurojackpot_theme";
       const FILTERS_STORAGE_KEY = "eurojackpot_filters";
       const HISTORY_STORAGE_KEY = "eurojackpot_gen_history";
+      const DRAWS_CACHE_KEY = "eurojackpot_draws_cache";
+
       let allDrawsDesc = [];
       let currentMain = [];
       let currentBonus = [];
       let genHistory = [];
       let deferredPrompt = null;
+
+      function isOnlineNow() {
+        return typeof navigator.onLine === "boolean" ? navigator.onLine : true;
+      }
+
+      function updateNetworkBadge() {
+        const badge = document.getElementById("net-badge");
+        if (!badge) return;
+        const online = isOnlineNow();
+        badge.textContent = online ? "ONLINE" : "OFFLINE";
+        badge.classList.toggle("online", online);
+        badge.classList.toggle("offline", !online);
+      }
 
       function setStatus(msg) {
         document.getElementById("status-msg").textContent = msg;
@@ -1667,40 +1713,94 @@
           .join("");
       }
 
+      function saveDrawsCacheToLocalStorage(rawData) {
+        try {
+          const payload = {
+            savedAt: new Date().toLocaleString("ro-RO"),
+            data: rawData
+          };
+          window.localStorage.setItem(DRAWS_CACHE_KEY, JSON.stringify(payload));
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function readDrawsCacheFromLocalStorage() {
+        try {
+          const raw = window.localStorage.getItem(DRAWS_CACHE_KEY);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          if (!parsed || !parsed.data) return null;
+          return {
+            savedAt: parsed.savedAt || "",
+            data: parsed.data
+          };
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function applyDrawsPayload(data, sourceLabel) {
+        allDrawsDesc = normalizeDraws(data);
+        populateYearFilter(allDrawsDesc);
+        populateDiffFilters(allDrawsDesc);
+        applySavedFiltersToSelects();
+        renderDraws();
+
+        document.getElementById("json-view").value = JSON.stringify(data, null, 2);
+
+        const latestDate = allDrawsDesc.length ? allDrawsDesc[0].date : "-";
+        const oldestDate = allDrawsDesc.length ? allDrawsDesc[allDrawsDesc.length - 1].date : "-";
+
+        document.getElementById("meta-text").innerHTML =
+          "Extrageri: <strong>" +
+          allDrawsDesc.length +
+          "</strong> | Interval: <strong>" +
+          latestDate +
+          " → " +
+          oldestDate +
+          "</strong>" +
+          (sourceLabel ? " · " + sourceLabel : "");
+      }
+
       function loadJsonFile() {
+        updateNetworkBadge();
         setStatus("Se actualizează...");
+
+        const cached = readDrawsCacheFromLocalStorage();
+
+        if (!isOnlineNow() && cached) {
+          applyDrawsPayload(
+            cached.data,
+            "din localStorage" + (cached.savedAt ? " (" + cached.savedAt + ")" : "")
+          );
+          setStatus("Sunteți OFFLINE — date încărcate din localStorage.");
+          return;
+        }
+
         fetch("./draws.json?t=" + Date.now())
           .then((res) => {
             if (!res.ok) throw new Error("HTTP " + res.status);
             return res.json();
           })
           .then((data) => {
-            allDrawsDesc = normalizeDraws(data);
-            populateYearFilter(allDrawsDesc);
-            populateDiffFilters(allDrawsDesc);
-            applySavedFiltersToSelects();
-            renderDraws();
-
-            document.getElementById("json-view").value = JSON.stringify(data, null, 2);
-
-            const latestDate = allDrawsDesc.length ? allDrawsDesc[0].date : "-";
-            const oldestDate = allDrawsDesc.length ? allDrawsDesc[allDrawsDesc.length - 1].date : "-";
-
-            document.getElementById("meta-info").innerHTML =
-              "Extrageri: <strong>" +
-              allDrawsDesc.length +
-              "</strong> | Interval: <strong>" +
-              latestDate +
-              " → " +
-              oldestDate +
-              "</strong>";
-
-            setStatus("JSON încărcat.");
+            const savedOk = saveDrawsCacheToLocalStorage(data);
+            applyDrawsPayload(data, savedOk ? "salvat local" : "online");
+            setStatus("JSON încărcat și salvat în localStorage.");
           })
           .catch((err) => {
-            document.getElementById("draws-list").innerHTML =
-              '<div class="empty-msg">Nu s-a putut citi draws.json (' + err.message + ').</div>';
-            setStatus("Eroare la citirea draws.json (" + err.message + ").");
+            if (cached) {
+              applyDrawsPayload(
+                cached.data,
+                "din localStorage" + (cached.savedAt ? " (" + cached.savedAt + ")" : "")
+              );
+              setStatus("Conexiune indisponibilă — afișez copia din localStorage.");
+            } else {
+              document.getElementById("draws-list").innerHTML =
+                '<div class="empty-msg">Nu s-a putut citi draws.json (' + err.message + ') și nu există copie în localStorage.</div>';
+              setStatus("Eroare la citirea draws.json (" + err.message + ").");
+            }
           });
       }
 
@@ -1952,7 +2052,18 @@
         }
       }
 
+      window.addEventListener("online", function () {
+        updateNetworkBadge();
+        setStatus("Conexiune revenită (ONLINE).");
+      });
+
+      window.addEventListener("offline", function () {
+        updateNetworkBadge();
+        setStatus("Sunteți OFFLINE — aplicația rulează pe datele locale.");
+      });
+
       document.addEventListener("DOMContentLoaded", function () {
+        updateNetworkBadge();
         initTheme();
         registerServiceWorker();
         renderMatrixTab();
