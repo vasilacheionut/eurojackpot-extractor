@@ -172,6 +172,7 @@
 
     .draws-word {
       font-weight: 700;
+      color: var(--online-fg);
     }
 
     .draws-word.online {
@@ -1079,17 +1080,14 @@
       let currentBonus = [];
       let genHistory = [];
       let deferredPrompt = null;
+      let currentOnlineState = typeof navigator.onLine === "boolean" ? navigator.onLine : true;
 
-      function isOnlineNow() {
-        return typeof navigator.onLine === "boolean" ? navigator.onLine : true;
-      }
-
-      function updateDrawsWordColor() {
+      function applyDrawsWordColor(isOnline) {
+        currentOnlineState = Boolean(isOnline);
         const wordEl = document.getElementById("draws-word");
         if (!wordEl) return;
-        const online = isOnlineNow();
-        wordEl.classList.toggle("online", online);
-        wordEl.classList.toggle("offline", !online);
+        wordEl.classList.toggle("online", currentOnlineState);
+        wordEl.classList.toggle("offline", !currentOnlineState);
       }
 
       function setStatus(msg) {
@@ -1716,7 +1714,7 @@
         }
       }
 
-      function applyDrawsPayload(data) {
+      function applyDrawsPayload(data, isOnline) {
         allDrawsDesc = normalizeDraws(data);
         populateYearFilter(allDrawsDesc);
         populateDiffFilters(allDrawsDesc);
@@ -1727,7 +1725,7 @@
 
         const latestDate = allDrawsDesc.length ? allDrawsDesc[0].date : "-";
         const oldestDate = allDrawsDesc.length ? allDrawsDesc[allDrawsDesc.length - 1].date : "-";
-        const stateClass = isOnlineNow() ? "online" : "offline";
+        const stateClass = isOnline ? "online" : "offline";
 
         document.getElementById("meta-info").innerHTML =
           '<span id="draws-word" class="draws-word ' +
@@ -1739,38 +1737,60 @@
           " → " +
           oldestDate +
           "</strong>";
+        applyDrawsWordColor(isOnline);
+      }
+
+      function fetchWithTimeout(url, timeoutMs) {
+        if (typeof AbortController === "function") {
+          const controller = new AbortController();
+          const timer = setTimeout(function () {
+            controller.abort();
+          }, timeoutMs || 3500);
+
+          return fetch(url, {
+            cache: "no-store",
+            signal: controller.signal
+          }).finally(function () {
+            clearTimeout(timer);
+          });
+        }
+        return fetch(url, { cache: "no-store" });
       }
 
       function loadJsonFile() {
-        updateDrawsWordColor();
-        setStatus("Se actualizează...");
-
+        setStatus("Se verifică conexiunea...");
         const cached = readDrawsCacheFromLocalStorage();
 
-        if (!isOnlineNow() && cached) {
-          applyDrawsPayload(cached);
-          setStatus("Sunteți OFFLINE — date încărcate din localStorage.");
+        if (typeof navigator.onLine === "boolean" && !navigator.onLine) {
+          applyDrawsWordColor(false);
+          if (cached) {
+            applyDrawsPayload(cached, false);
+            setStatus("Offline — date încărcate din localStorage.");
+          } else {
+            setStatus("Offline — nu există copie în localStorage.");
+          }
           return;
         }
 
-        fetch("./draws.json?t=" + Date.now())
+        fetchWithTimeout("./draws.json?t=" + Date.now(), 3500)
           .then((res) => {
             if (!res.ok) throw new Error("HTTP " + res.status);
             return res.json();
           })
           .then((data) => {
             saveDrawsCacheToLocalStorage(data);
-            applyDrawsPayload(data);
-            setStatus("JSON încărcat.");
+            applyDrawsPayload(data, true);
+            setStatus("Online — JSON încărcat.");
           })
           .catch((err) => {
+            applyDrawsWordColor(false);
             if (cached) {
-              applyDrawsPayload(cached);
-              setStatus("Conexiune indisponibilă — afișez copia din localStorage.");
+              applyDrawsPayload(cached, false);
+              setStatus("Offline — date încărcate din localStorage.");
             } else {
               document.getElementById("draws-list").innerHTML =
                 '<div class="empty-msg">Nu s-a putut citi draws.json (' + err.message + ').</div>';
-              setStatus("Eroare la citirea draws.json (" + err.message + ").");
+              setStatus("Offline (" + err.message + ").");
             }
           });
       }
@@ -2024,17 +2044,26 @@
       }
 
       window.addEventListener("online", function () {
-        updateDrawsWordColor();
-        setStatus("Conexiune revenită.");
+        loadJsonFile();
       });
 
       window.addEventListener("offline", function () {
-        updateDrawsWordColor();
-        setStatus("Sunteți offline — date din localStorage.");
+        applyDrawsWordColor(false);
+        setStatus("Offline — date din localStorage.");
+      });
+
+      window.addEventListener("pageshow", function () {
+        loadJsonFile();
+      });
+
+      document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) {
+          loadJsonFile();
+        }
       });
 
       document.addEventListener("DOMContentLoaded", function () {
-        updateDrawsWordColor();
+        applyDrawsWordColor(currentOnlineState);
         initTheme();
         registerServiceWorker();
         renderMatrixTab();
