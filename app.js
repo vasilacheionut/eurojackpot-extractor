@@ -1,7 +1,6 @@
 (function () {
   const THEME_STORAGE_KEY = "eurojackpot_theme";
-  const ZOOM_STORAGE_KEY = "eurojackpot_zoom";
-  const ZOOM_LEVELS = [1, 1.15, 1.3];
+  const ZOOM_STORAGE_KEY = "eurojackpot_pinch_zoom";
   const FILTERS_STORAGE_KEY = "eurojackpot_filters";
   const HISTORY_STORAGE_KEY = "eurojackpot_gen_history";
   const DRAWS_CACHE_KEY = "eurojackpot_draws_cache";
@@ -12,7 +11,7 @@
   let genHistory = [];
   let deferredPrompt = null;
   let currentOnlineState = typeof navigator.onLine === "boolean" ? navigator.onLine : true;
-  let currentZoom = 1;
+  let pinchZoomEnabled = false;
 
   function applyDrawsWordColor(isOnline) {
     currentOnlineState = Boolean(isOnline);
@@ -31,43 +30,45 @@
     window.location.reload();
   }
 
-  function normalizeZoom(val) {
-    const num = Number(val);
-    const matched = ZOOM_LEVELS.find(function (z) {
-      return Math.abs(z - num) < 0.01;
-    });
-    return matched || 1;
-  }
+  function applyPinchZoom(enabled) {
+    pinchZoomEnabled = Boolean(enabled);
+    document.documentElement.setAttribute(
+      "data-pinch-zoom",
+      pinchZoomEnabled ? "on" : "off"
+    );
 
-  function applyZoom(zoomVal) {
-    const normalized = normalizeZoom(zoomVal);
-    currentZoom = normalized;
-    document.documentElement.style.setProperty("--zoom-scale", String(normalized));
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (viewportMeta) {
+      viewportMeta.setAttribute(
+        "content",
+        pinchZoomEnabled
+          ? "width=device-width, initial-scale=1.0, maximum-scale=4.0, user-scalable=yes"
+          : "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      );
+    }
+
     const btn = document.getElementById("zoom-btn");
     if (btn) {
-      btn.textContent = "Zoom: " + Math.round(normalized * 100) + "%";
+      btn.textContent = pinchZoomEnabled ? "Zoom: ON" : "Zoom: OFF";
+      btn.classList.toggle("zoom-active", pinchZoomEnabled);
     }
-    return normalized;
   }
 
   function initZoom() {
-    let saved = null;
+    let saved = "off";
     try {
-      saved = window.localStorage.getItem(ZOOM_STORAGE_KEY);
+      saved = window.localStorage.getItem(ZOOM_STORAGE_KEY) || "off";
     } catch (e) {
-      saved = null;
+      saved = "off";
     }
-    applyZoom(saved || 1);
+    applyPinchZoom(saved === "on");
   }
 
-  function cycleZoom() {
-    const idx = ZOOM_LEVELS.findIndex(function (z) {
-      return Math.abs(z - currentZoom) < 0.01;
-    });
-    const nextIdx = idx === -1 ? 0 : (idx + 1) % ZOOM_LEVELS.length;
-    const nextZoom = applyZoom(ZOOM_LEVELS[nextIdx]);
+  function togglePinchZoom() {
+    const next = !pinchZoomEnabled;
+    applyPinchZoom(next);
     try {
-      window.localStorage.setItem(ZOOM_STORAGE_KEY, String(nextZoom));
+      window.localStorage.setItem(ZOOM_STORAGE_KEY, next ? "on" : "off");
     } catch (e) {
       // ignoră dacă localStorage nu este accesibil
     }
@@ -1071,7 +1072,7 @@
 
     document.getElementById("brand-reload-link").addEventListener("click", reloadPage);
     document.getElementById("install-btn").addEventListener("click", triggerInstall);
-    document.getElementById("zoom-btn").addEventListener("click", cycleZoom);
+    document.getElementById("zoom-btn").addEventListener("click", togglePinchZoom);
     document.getElementById("theme-btn").addEventListener("click", toggleTheme);
 
     document.getElementById("tab-draws-btn").addEventListener("click", function () {
