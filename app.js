@@ -393,7 +393,7 @@
         (isDigitMatch ? " match-highlight" : "") +
         '" style="grid-column:' +
         col +
-        ';grid-row:3;">' +
+        ';grid-row:2;">' +
         digitDiff +
         "</span>";
     });
@@ -406,7 +406,7 @@
         (isMainMatch ? " match-highlight" : "") +
         '" style="grid-column:' +
         col +
-        ';grid-row:2;">' +
+        ';grid-row:3;">' +
         d +
         "</span>";
     });
@@ -427,7 +427,7 @@
       cellsHtml +=
         '<span class="digit-diff-ball euro-digit" style="grid-column:' +
         col +
-        ';grid-row:3;">' +
+        ';grid-row:2;">' +
         euroDigitDiff +
         "</span>";
     });
@@ -440,7 +440,7 @@
         (isEuroMatch ? " match-highlight" : "") +
         '" style="grid-column:' +
         col +
-        ';grid-row:2;">' +
+        ';grid-row:3;">' +
         d +
         "</span>";
     });
