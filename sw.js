@@ -1,4 +1,4 @@
-const CACHE_NAME = "eurojackpot-pwa-v15";
+const CACHE_NAME = "eurojackpot-pwa-v16";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
