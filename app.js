@@ -385,18 +385,22 @@
       }
     });
 
-    const presentList = orderedCodes.filter(function (c) {
-      return counts[c] > 0;
-    });
-
-    const codesText = presentList.length
-      ? presentList.map(function (c) { return counts[c] + c; }).join(" ")
-      : "-";
+    const items = orderedCodes
+      .filter(function (c) {
+        return counts[c] > 0;
+      })
+      .map(function (c) {
+        return {
+          code: c,
+          count: counts[c],
+          label: counts[c] + c
+        };
+      });
 
     return {
-      count: presentList.length,
+      count: items.length,
       total: 4,
-      codesText: codesText
+      items: items
     };
   }
 
@@ -945,12 +949,25 @@
           ? " colors-" + colorInfo.count
           : "";
 
+        const chipsHtml = colorInfo.items
+          .map(function (it) {
+            return (
+              '<span class="draw-color-chip parity-' +
+              it.code +
+              '">' +
+              it.label +
+              "</span>"
+            );
+          })
+          .join("");
+
         return `
           <div class="draw-card">
             <div class="draw-header">
               <span class="draw-date">${d.date}</span>
               <div class="draw-meta-right">
-                <span class="draw-colors-tag${colorToneClass}">Culori ${colorInfo.count}/${colorInfo.total}: ${colorInfo.codesText}</span>
+                <span class="draw-colors-tag${colorToneClass}">Culori ${colorInfo.count}/${colorInfo.total}</span>
+                <span class="draw-color-pills">${chipsHtml}</span>
                 <span class="draw-year">${d.year || "-"}</span>
               </div>
             </div>
