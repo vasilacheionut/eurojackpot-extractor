@@ -190,7 +190,7 @@
     }
   }
 
-  /* --- EXTRAGERI, BILE DISTANȚE & DISTANȚĂ CIFRE --- */
+  /* --- EXTRAGERI, BILE DISTANȚE, DISTANȚĂ CIFRE & TRANZIȚII CIFRE --- */
   function computeDiffs(nums) {
     const valid = Array.isArray(nums)
       ? nums.map(Number).filter(function (n) { return Number.isFinite(n); })
@@ -220,6 +220,20 @@
       ? nums.map(Number).filter(function (n) { return Number.isFinite(n); })
       : [];
     return valid.map(computeDigitDiff);
+  }
+
+  // Diferența dintre ultima cifră a numărului din față și prima cifră a numărului următor (doar cele 5 numere principale)
+  function computeEdgeDigitDiffs(mainNums) {
+    const valid = Array.isArray(mainNums)
+      ? mainNums.slice(0, 5).map(Number).filter(function (n) { return Number.isFinite(n); })
+      : [];
+    const edgeDiffs = [];
+    for (let i = 0; i < valid.length - 1; i++) {
+      const lastDigitPrev = getTwoDigits(valid[i])[1];
+      const firstDigitNext = getTwoDigits(valid[i + 1])[0];
+      edgeDiffs.push(Math.abs(lastDigitPrev - firstDigitNext));
+    }
+    return edgeDiffs;
   }
 
   function getDigitParityCode(num) {
@@ -368,12 +382,14 @@
     const targetDigitDiff = opts.digitDiff;
     const targetEuroDiff = opts.euroDiff;
 
-    const mainDiffs = computeDiffs(mainNumbers);
+    const mainFive = (mainNumbers || []).slice(0, 5);
+    const mainDiffs = computeDiffs(mainFive);
+    const edgeDigitDiffs = computeEdgeDigitDiffs(mainFive);
     const euroDiffs = computeDiffs(euroNumbers);
 
     let cellsHtml = "";
 
-    mainNumbers.forEach(function (n, idx) {
+    mainFive.forEach(function (n, idx) {
       const col = idx * 2 + 1;
       const digitDiff = computeDigitDiff(n);
       const isDigitMatch =
@@ -408,6 +424,16 @@
         col +
         ';grid-row:3;">' +
         d +
+        "</span>";
+    });
+
+    edgeDigitDiffs.forEach(function (ed, idx) {
+      const col = idx * 2 + 2;
+      cellsHtml +=
+        '<span class="edge-digit-ball" title="Ultima cifră față vs. prima cifră după" style="grid-column:' +
+        col +
+        ';grid-row:4;">' +
+        ed +
         "</span>";
     });
 
@@ -905,6 +931,22 @@
       .join("");
   }
 
+  function renderGenEdgeDiffs(containerId, mainNumbers) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const edgeDiffs = computeEdgeDigitDiffs(mainNumbers);
+
+    container.innerHTML = edgeDiffs
+      .map(function (ed) {
+        return (
+          '<span class="gen-edge-ball" title="Ultima cifră față vs. prima cifră după">' +
+          ed +
+          "</span>"
+        );
+      })
+      .join("");
+  }
+
   function saveGenHistory() {
     try {
       window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(genHistory.slice(0, 10)));
@@ -972,6 +1014,7 @@
       renderGenBalls("main-numbers", currentMain);
       renderGenBalls("bonus-numbers", currentBonus);
       renderGenDiffs("main-diffs", currentMain, false);
+      renderGenEdgeDiffs("main-edge-diffs", currentMain);
       renderGenDiffs("bonus-diffs", currentBonus, true);
       renderHistoryList();
     } else {
@@ -1008,6 +1051,7 @@
     renderGenBalls("main-numbers", currentMain);
     renderGenBalls("bonus-numbers", currentBonus);
     renderGenDiffs("main-diffs", currentMain, false);
+    renderGenEdgeDiffs("main-edge-diffs", currentMain);
     renderGenDiffs("bonus-diffs", currentBonus, true);
     addToHistory(currentMain, currentBonus);
   }
