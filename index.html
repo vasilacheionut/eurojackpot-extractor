@@ -10,7 +10,7 @@
   <link rel="manifest" href="./manifest.json" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
   <link rel="stylesheet" href="./styles.css" />
-  <title>Eurojackpot — Extrageri, Generator, Matrice & JSON</title>
+  <title>Eurojackpot — Extrageri, Generator, Matrice, Despre & JSON</title>
 </head>
 <body>
   <div class="app">
@@ -110,7 +110,77 @@
         </div>
       </section>
 
-      <!-- TAB 4: JSON -->
+      <!-- TAB 4: DESPRE -->
+      <section class="tab-panel" id="panel-about" role="tabpanel">
+        <div class="about-body">
+          <div class="about-card">
+            <div class="about-title">Exemplu replicat: Extragerea 12.12.2025</div>
+            <p class="about-lead">
+              Numere extrase: <strong>2, 25, 27, 37, 50</strong> + stele <strong>2, 11</strong>. Mai jos este replicat cardul exact așa cum apare în tab-ul <em>Extrageri</em>.
+            </p>
+            <div id="about-sample-card"></div>
+          </div>
+
+          <div class="about-card">
+            <div class="about-title">1. Antetul cardului &amp; etichetele de culoare</div>
+            <ul class="about-list">
+              <li>
+                <strong>Data și anul:</strong> <code>12.12.2025</code> (stânga) și <code>2025</code> (dreapta).
+              </li>
+              <li>
+                <strong>Culori 4/4:</strong> arată câte dintre cele 4 categorii de paritate pe cifre (<code>PP</code>, <code>PI</code>, <code>IP</code>, <code>II</code>) sunt prezente în cele 5 numere principale. Aici apar toate cele 4 (<code>4/4</code>).
+              </li>
+              <li>
+                <strong>Etichetele 1PP · 2PI · 1IP · 1II:</strong> indică numărul de bile din cele 5 principale pentru fiecare categorie (numerele 1–9 sunt completate cu <code>0</code> în față, ex. <code>2</code> → <code>02</code>):
+                <ul>
+                  <li><code>1PP</code> (bleumarin): <strong>02</strong> → cifrele <code>0</code> (Par) și <code>2</code> (Par) = 1 număr.</li>
+                  <li><code>2PI</code> (verde): <strong>50</strong> (<code>5</code> Impar, <code>0</code> Par? Atenție: la <code>50</code>, prima cifră este <code>5</code> = Impar, a doua este <code>0</code> = Par → <code>IP</code>! Iar la <code>25</code>: <code>2</code> Par, <code>5</code> Impar → <code>PI</code>; la <code>27</code>: <code>2</code> Par, <code>7</code> Impar → <code>PI</code>; deci <code>25</code> și <code>27</code> dau <code>2PI</code>).</li>
+                  <li><code>1IP</code> (violet): <strong>50</strong> → <code>5</code> (Impar) și <code>0</code> (Par) = 1 număr.</li>
+                  <li><code>1II</code> (roșu): <strong>37</strong> → <code>3</code> (Impar) și <code>7</code> (Impar) = 1 număr.</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+
+          <div class="about-card">
+            <div class="about-title">2. Sub-bara de paritate pe număr &amp; jumătăți</div>
+            <ul class="about-list">
+              <li>
+                <strong>2P · 3I:</strong> dintre cele 5 numere principale, <strong>2</strong> sunt numere pare (<code>2</code>, <code>50</code>) și <strong>3</strong> sunt impare (<code>25</code>, <code>27</code>, <code>37</code>).
+              </li>
+              <li>
+                <strong>1–25: 2 · 26–50: 3:</strong> <strong>2</strong> numere sunt în prima jumătate <code>1–25</code> (<code>2</code>, <code>25</code>) și <strong>3</strong> în a doua jumătate <code>26–50</code> (<code>27</code>, <code>37</code>, <code>50</code>).
+              </li>
+            </ul>
+          </div>
+
+          <div class="about-card">
+            <div class="about-title">3. Rândurile matricei din interiorul cardului</div>
+            <ul class="about-list">
+              <li>
+                <strong>Rândul 1 (Bile principale &amp; stele):</strong> <code>2, 25, 27, 37, 50</code> separate prin <code>+</code> de stelele <code>2, 11</code>, colorate după categoria <code>PP / PI / IP / II</code>.
+              </li>
+              <li>
+                <strong>Rândul 2 (Distanța între cifre, mov/alb stele):</strong> <code>|c1 − c2|</code> pentru fiecare bilă (<code>02</code> → <code>|0−2|=2</code>, <code>25</code> → <code>|2−5|=3</code>, <code>27</code> → <code>|2−7|=5</code>, <code>37</code> → <code>|3−7|=4</code>, <code>50</code> → <code>|5−0|=5</code>; stele: <code>02</code> → <code>2</code>, <code>11</code> → <code>0</code>).
+              </li>
+              <li>
+                <strong>Rândul 3 (Distanța între bile alăturate, bleu/galben):</strong> diferența absolută dintre două numere consecutive pe orizontală (<code>|25−2|=23</code>, <code>|27−25|=2</code>, <code>|37−27|=10</code>, <code>|50−37|=13</code>; stele: <code>|11−2|=9</code>).
+              </li>
+              <li>
+                <strong>Rândul 4 (Tranziții cifre între bile, portocaliu):</strong> diferența absolută dintre <em>ultima cifră</em> a numărului din stânga și <em>prima cifră</em> a numărului din dreapta:
+                <ul>
+                  <li>între <code>2</code> (ultima cifră <code>2</code>) și <code>25</code> (prima cifră <code>2</code>): <code>|2 − 2| = 0</code>;</li>
+                  <li>între <code>25</code> (<code>5</code>) și <code>27</code> (<code>2</code>): <code>|5 − 2| = 3</code>;</li>
+                  <li>între <code>27</code> (<code>7</code>) și <code>37</code> (<code>3</code>): <code>|7 − 3| = 4</code>;</li>
+                  <li>între <code>37</code> (<code>7</code>) și <code>50</code> (<code>5</code>): <code>|7 − 5| = 2</code>.</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: JSON -->
       <section class="tab-panel" id="panel-json" role="tabpanel">
         <div class="json-panel-body">
           <textarea id="json-view" readonly></textarea>
@@ -393,6 +463,9 @@
       </button>
       <button type="button" class="nav-btn" id="tab-matrix-btn" role="tab" aria-selected="false">
         Matrice
+      </button>
+      <button type="button" class="nav-btn" id="tab-about-btn" role="tab" aria-selected="false">
+        Despre
       </button>
       <button type="button" class="nav-btn" id="tab-json-btn" role="tab" aria-selected="false">
         JSON
