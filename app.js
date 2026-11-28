@@ -138,6 +138,59 @@
     } catch (e) {
       // ignoră dacă localStorage nu este accesibil
     }
+    updateFilterBadgeAndSummary(payload);
+  }
+
+  function updateFilterBadgeAndSummary(state) {
+    const f = state || readSavedFilters();
+    const badge = document.getElementById("active-filters-badge");
+    const openBtn = document.getElementById("open-filters-btn");
+    const summaryEl = document.getElementById("active-filters-summary");
+
+    const parts = [];
+    let activeCount = 0;
+
+    if (f.year !== "ALL") {
+      activeCount++;
+      parts.push("An " + f.year);
+    }
+    if (f.mainDiff !== "ALL") {
+      activeCount++;
+      parts.push("4b:" + f.mainDiff);
+    }
+    if (f.digitDiff !== "ALL") {
+      activeCount++;
+      parts.push("Cifre:" + f.digitDiff);
+    }
+    if (f.euroDiff !== "ALL") {
+      activeCount++;
+      parts.push("Stele:" + f.euroDiff);
+    }
+    if (f.edgeDiff !== "ALL") {
+      activeCount++;
+      parts.push("Tranz:" + f.edgeDiff);
+    }
+
+    if (badge) {
+      badge.textContent = String(activeCount);
+      badge.hidden = activeCount === 0;
+    }
+    if (openBtn) {
+      openBtn.classList.toggle("has-filters", activeCount > 0);
+    }
+    if (summaryEl) {
+      summaryEl.textContent = parts.length ? parts.join(" · ") : "Toți anii · Fără filtre distanță";
+    }
+  }
+
+  function openFiltersModal() {
+    const modal = document.getElementById("filters-modal");
+    if (modal) modal.hidden = false;
+  }
+
+  function closeFiltersModal() {
+    const modal = document.getElementById("filters-modal");
+    if (modal) modal.hidden = true;
   }
 
   function setSelectIfAvailable(selectEl, targetValue) {
@@ -233,7 +286,6 @@
     return valid.map(computeDigitDiff);
   }
 
-  // Diferența dintre ultima cifră reală a numărului din față și prima cifră reală a numărului următor (doar cele 5 numere principale)
   function computeEdgeDigitDiffs(mainNums) {
     const valid = Array.isArray(mainNums)
       ? mainNums.slice(0, 5).map(Number).filter(function (n) { return Number.isFinite(n); })
@@ -1162,6 +1214,7 @@
     initTheme();
     registerServiceWorker();
     renderMatrixTab();
+    updateFilterBadgeAndSummary();
 
     document.getElementById("brand-reload-link").addEventListener("click", reloadPage);
     document.getElementById("install-btn").addEventListener("click", triggerInstall);
@@ -1179,6 +1232,14 @@
     });
     document.getElementById("tab-json-btn").addEventListener("click", function () {
       switchTab("json");
+    });
+
+    document.getElementById("open-filters-btn").addEventListener("click", openFiltersModal);
+    document.getElementById("close-filters-x").addEventListener("click", closeFiltersModal);
+    document.getElementById("modal-done-btn").addEventListener("click", closeFiltersModal);
+    document.getElementById("modal-reset-btn").addEventListener("click", resetDiffAndYearFilters);
+    document.getElementById("filters-modal").addEventListener("click", function (e) {
+      if (e.target === this) closeFiltersModal();
     });
 
     document.getElementById("year-filter").addEventListener("change", handleFilterChange);
