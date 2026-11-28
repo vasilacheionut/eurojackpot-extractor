@@ -12,9 +12,13 @@
     euroDiff: "ALL",
     edgeDiff: "ALL",
     ppMin: "ALL",
+    ppMax: "ALL",
     piMin: "ALL",
+    piMax: "ALL",
     ipMin: "ALL",
+    ipMax: "ALL",
     iiMin: "ALL",
+    iiMax: "ALL",
     evenMin: "ALL",
     evenMax: "ALL",
     oddMin: "ALL",
@@ -32,9 +36,13 @@
     "euro-diff-filter",
     "edge-diff-filter",
     "pp-min-filter",
+    "pp-max-filter",
     "pi-min-filter",
+    "pi-max-filter",
     "ip-min-filter",
+    "ip-max-filter",
     "ii-min-filter",
+    "ii-max-filter",
     "even-min-filter",
     "even-max-filter",
     "odd-min-filter",
@@ -171,9 +179,13 @@
       euroDiff: document.getElementById("euro-diff-filter").value || "ALL",
       edgeDiff: document.getElementById("edge-diff-filter").value || "ALL",
       ppMin: document.getElementById("pp-min-filter").value || "ALL",
+      ppMax: document.getElementById("pp-max-filter").value || "ALL",
       piMin: document.getElementById("pi-min-filter").value || "ALL",
+      piMax: document.getElementById("pi-max-filter").value || "ALL",
       ipMin: document.getElementById("ip-min-filter").value || "ALL",
+      ipMax: document.getElementById("ip-max-filter").value || "ALL",
       iiMin: document.getElementById("ii-min-filter").value || "ALL",
+      iiMax: document.getElementById("ii-max-filter").value || "ALL",
       evenMin: document.getElementById("even-min-filter").value || "ALL",
       evenMax: document.getElementById("even-max-filter").value || "ALL",
       oddMin: document.getElementById("odd-min-filter").value || "ALL",
@@ -193,6 +205,23 @@
       // ignoră dacă localStorage nu este accesibil
     }
     updateFilterBadgeAndSummary(payload);
+  }
+
+  function appendRangePart(parts, minVal, maxVal, label) {
+    const hasMin = minVal !== "ALL";
+    const hasMax = maxVal !== "ALL";
+    let count = 0;
+    if (hasMin) count++;
+    if (hasMax) count++;
+
+    if (hasMin && hasMax) {
+      parts.push(minVal === maxVal ? label + "=" + minVal : label + ":" + minVal + "–" + maxVal);
+    } else if (hasMin) {
+      parts.push(label + ">=" + minVal);
+    } else if (hasMax) {
+      parts.push(label + "<=" + maxVal);
+    }
+    return count;
   }
 
   function updateFilterBadgeAndSummary(state) {
@@ -225,21 +254,11 @@
       parts.push("Tranz:" + f.edgeDiff);
     }
 
-    const catSpecs = [
-      { val: f.ppMin, label: "PP" },
-      { val: f.piMin, label: "PI" },
-      { val: f.ipMin, label: "IP" },
-      { val: f.iiMin, label: "II" }
-    ];
-
-    catSpecs.forEach(function (c) {
-      if (c.val !== "ALL") {
-        activeCount++;
-        parts.push(c.label + ">=" + c.val);
-      }
-    });
-
     const rangeSpecs = [
+      { min: f.ppMin, max: f.ppMax, label: "PP" },
+      { min: f.piMin, max: f.piMax, label: "PI" },
+      { min: f.ipMin, max: f.ipMax, label: "IP" },
+      { min: f.iiMin, max: f.iiMax, label: "II" },
       { min: f.evenMin, max: f.evenMax, label: "P" },
       { min: f.oddMin, max: f.oddMax, label: "I" },
       { min: f.lowMin, max: f.lowMax, label: "1–25" },
@@ -247,18 +266,7 @@
     ];
 
     rangeSpecs.forEach(function (r) {
-      const hasMin = r.min !== "ALL";
-      const hasMax = r.max !== "ALL";
-      if (hasMin) activeCount++;
-      if (hasMax) activeCount++;
-
-      if (hasMin && hasMax) {
-        parts.push(r.min === r.max ? r.label + "=" + r.min : r.label + ":" + r.min + "–" + r.max);
-      } else if (hasMin) {
-        parts.push(r.label + ">=" + r.min);
-      } else if (hasMax) {
-        parts.push(r.label + "<=" + r.max);
-      }
+      activeCount += appendRangePart(parts, r.min, r.max, r.label);
     });
 
     if (badge) {
@@ -804,9 +812,13 @@
     setSelectIfAvailable(document.getElementById("euro-diff-filter"), saved.euroDiff);
     setSelectIfAvailable(document.getElementById("edge-diff-filter"), saved.edgeDiff);
     setSelectIfAvailable(document.getElementById("pp-min-filter"), saved.ppMin);
+    setSelectIfAvailable(document.getElementById("pp-max-filter"), saved.ppMax);
     setSelectIfAvailable(document.getElementById("pi-min-filter"), saved.piMin);
+    setSelectIfAvailable(document.getElementById("pi-max-filter"), saved.piMax);
     setSelectIfAvailable(document.getElementById("ip-min-filter"), saved.ipMin);
+    setSelectIfAvailable(document.getElementById("ip-max-filter"), saved.ipMax);
     setSelectIfAvailable(document.getElementById("ii-min-filter"), saved.iiMin);
+    setSelectIfAvailable(document.getElementById("ii-max-filter"), saved.iiMax);
     setSelectIfAvailable(document.getElementById("even-min-filter"), saved.evenMin);
     setSelectIfAvailable(document.getElementById("even-max-filter"), saved.evenMax);
     setSelectIfAvailable(document.getElementById("odd-min-filter"), saved.oddMin);
@@ -956,10 +968,10 @@
       }
 
       const catCounts = getCategoryCounts(d.mainNumbers);
-      if (f.ppMin !== "ALL" && catCounts.PP < Number(f.ppMin)) return false;
-      if (f.piMin !== "ALL" && catCounts.PI < Number(f.piMin)) return false;
-      if (f.ipMin !== "ALL" && catCounts.IP < Number(f.ipMin)) return false;
-      if (f.iiMin !== "ALL" && catCounts.II < Number(f.iiMin)) return false;
+      if (!matchesRange(catCounts.PP, f.ppMin, f.ppMax)) return false;
+      if (!matchesRange(catCounts.PI, f.piMin, f.piMax)) return false;
+      if (!matchesRange(catCounts.IP, f.ipMin, f.ipMax)) return false;
+      if (!matchesRange(catCounts.II, f.iiMin, f.iiMax)) return false;
 
       const ns = getMainNumberStats(d.mainNumbers);
       if (!matchesRange(ns.evenCount, f.evenMin, f.evenMax)) return false;
