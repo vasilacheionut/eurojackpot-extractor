@@ -5,6 +5,38 @@
   const HISTORY_STORAGE_KEY = "eurojackpot_gen_history";
   const DRAWS_CACHE_KEY = "eurojackpot_draws_cache";
 
+  const DEFAULT_FILTERS = {
+    year: "ALL",
+    mainDiff: "ALL",
+    digitDiff: "ALL",
+    euroDiff: "ALL",
+    edgeDiff: "ALL",
+    evenMin: "ALL",
+    evenMax: "ALL",
+    oddMin: "ALL",
+    oddMax: "ALL",
+    lowMin: "ALL",
+    lowMax: "ALL",
+    highMin: "ALL",
+    highMax: "ALL"
+  };
+
+  const FILTER_IDS = [
+    "year-filter",
+    "main-diff-filter",
+    "digit-diff-filter",
+    "euro-diff-filter",
+    "edge-diff-filter",
+    "even-min-filter",
+    "even-max-filter",
+    "odd-min-filter",
+    "odd-max-filter",
+    "low-min-filter",
+    "low-max-filter",
+    "high-min-filter",
+    "high-max-filter"
+  ];
+
   let allDrawsDesc = [];
   let currentMain = [];
   let currentBonus = [];
@@ -109,30 +141,40 @@
   function readSavedFilters() {
     try {
       const raw = window.localStorage.getItem(FILTERS_STORAGE_KEY);
-      if (!raw) {
-        return { year: "ALL", mainDiff: "ALL", digitDiff: "ALL", euroDiff: "ALL", edgeDiff: "ALL" };
-      }
+      if (!raw) return Object.assign({}, DEFAULT_FILTERS);
       const parsed = JSON.parse(raw);
-      return {
-        year: parsed && parsed.year ? String(parsed.year) : "ALL",
-        mainDiff: parsed && parsed.mainDiff ? String(parsed.mainDiff) : "ALL",
-        digitDiff: parsed && parsed.digitDiff ? String(parsed.digitDiff) : "ALL",
-        euroDiff: parsed && parsed.euroDiff ? String(parsed.euroDiff) : "ALL",
-        edgeDiff: parsed && parsed.edgeDiff ? String(parsed.edgeDiff) : "ALL"
-      };
+      const out = Object.assign({}, DEFAULT_FILTERS);
+      Object.keys(DEFAULT_FILTERS).forEach(function (key) {
+        if (parsed && parsed[key] !== undefined && parsed[key] !== null) {
+          out[key] = String(parsed[key]);
+        }
+      });
+      return out;
     } catch (e) {
-      return { year: "ALL", mainDiff: "ALL", digitDiff: "ALL", euroDiff: "ALL", edgeDiff: "ALL" };
+      return Object.assign({}, DEFAULT_FILTERS);
     }
   }
 
-  function saveCurrentFilters() {
-    const payload = {
+  function getCurrentFilterState() {
+    return {
       year: document.getElementById("year-filter").value || "ALL",
       mainDiff: document.getElementById("main-diff-filter").value || "ALL",
       digitDiff: document.getElementById("digit-diff-filter").value || "ALL",
       euroDiff: document.getElementById("euro-diff-filter").value || "ALL",
-      edgeDiff: document.getElementById("edge-diff-filter").value || "ALL"
+      edgeDiff: document.getElementById("edge-diff-filter").value || "ALL",
+      evenMin: document.getElementById("even-min-filter").value || "ALL",
+      evenMax: document.getElementById("even-max-filter").value || "ALL",
+      oddMin: document.getElementById("odd-min-filter").value || "ALL",
+      oddMax: document.getElementById("odd-max-filter").value || "ALL",
+      lowMin: document.getElementById("low-min-filter").value || "ALL",
+      lowMax: document.getElementById("low-max-filter").value || "ALL",
+      highMin: document.getElementById("high-min-filter").value || "ALL",
+      highMax: document.getElementById("high-max-filter").value || "ALL"
     };
+  }
+
+  function saveCurrentFilters() {
+    const payload = getCurrentFilterState();
     try {
       window.localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(payload));
     } catch (e) {
@@ -170,6 +212,28 @@
       activeCount++;
       parts.push("Tranz:" + f.edgeDiff);
     }
+
+    const rangeSpecs = [
+      { min: f.evenMin, max: f.evenMax, label: "P" },
+      { min: f.oddMin, max: f.oddMax, label: "I" },
+      { min: f.lowMin, max: f.lowMax, label: "1–25" },
+      { min: f.highMin, max: f.highMax, label: "26–50" }
+    ];
+
+    rangeSpecs.forEach(function (r) {
+      const hasMin = r.min !== "ALL";
+      const hasMax = r.max !== "ALL";
+      if (hasMin) activeCount++;
+      if (hasMax) activeCount++;
+
+      if (hasMin && hasMax) {
+        parts.push(r.min === r.max ? r.label + "=" + r.min : r.label + ":" + r.min + "–" + r.max);
+      } else if (hasMin) {
+        parts.push(r.label + ">=" + r.min);
+      } else if (hasMax) {
+        parts.push(r.label + "<=" + r.max);
+      }
+    });
 
     if (badge) {
       badge.textContent = String(activeCount);
@@ -332,7 +396,6 @@
     };
   }
 
-  // Număr P (par) / I (impar) și jumătăți 1–25 / 26–50 pentru cele 5 numere principale
   function getMainNumberStats(mainNumbers) {
     let evenCount = 0;
     let oddCount = 0;
@@ -360,6 +423,12 @@
       lowHalfCount,
       highHalfCount
     };
+  }
+
+  function matchesRange(val, minStr, maxStr) {
+    if (minStr !== "ALL" && val < Number(minStr)) return false;
+    if (maxStr !== "ALL" && val > Number(maxStr)) return false;
+    return true;
   }
 
   /* --- PANOU 1-50, PARITATE PP/PI/IP/II & LISTĂ DISTANȚE CIFRE --- */
@@ -693,6 +762,14 @@
     setSelectIfAvailable(document.getElementById("digit-diff-filter"), saved.digitDiff);
     setSelectIfAvailable(document.getElementById("euro-diff-filter"), saved.euroDiff);
     setSelectIfAvailable(document.getElementById("edge-diff-filter"), saved.edgeDiff);
+    setSelectIfAvailable(document.getElementById("even-min-filter"), saved.evenMin);
+    setSelectIfAvailable(document.getElementById("even-max-filter"), saved.evenMax);
+    setSelectIfAvailable(document.getElementById("odd-min-filter"), saved.oddMin);
+    setSelectIfAvailable(document.getElementById("odd-max-filter"), saved.oddMax);
+    setSelectIfAvailable(document.getElementById("low-min-filter"), saved.lowMin);
+    setSelectIfAvailable(document.getElementById("low-max-filter"), saved.lowMax);
+    setSelectIfAvailable(document.getElementById("high-min-filter"), saved.highMin);
+    setSelectIfAvailable(document.getElementById("high-max-filter"), saved.highMax);
     saveCurrentFilters();
   }
 
@@ -702,11 +779,10 @@
   }
 
   function resetDiffAndYearFilters() {
-    document.getElementById("year-filter").value = "ALL";
-    document.getElementById("main-diff-filter").value = "ALL";
-    document.getElementById("digit-diff-filter").value = "ALL";
-    document.getElementById("euro-diff-filter").value = "ALL";
-    document.getElementById("edge-diff-filter").value = "ALL";
+    FILTER_IDS.forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) el.value = "ALL";
+    });
     saveCurrentFilters();
     renderDraws();
   }
@@ -799,54 +875,51 @@
 
   function renderDraws() {
     const container = document.getElementById("draws-list");
-    const selectedYear = document.getElementById("year-filter").value;
-    const selectedMainDiff = document.getElementById("main-diff-filter").value;
-    const selectedDigitDiff = document.getElementById("digit-diff-filter").value;
-    const selectedEuroDiff = document.getElementById("euro-diff-filter").value;
-    const selectedEdgeDiff = document.getElementById("edge-diff-filter").value;
+    const f = getCurrentFilterState();
 
     const filtered = allDrawsDesc.filter(function (d) {
-      if (selectedYear !== "ALL" && String(d.year) !== selectedYear) {
+      if (f.year !== "ALL" && String(d.year) !== f.year) {
         return false;
       }
-      if (selectedMainDiff !== "ALL") {
-        const targetMain = Number(selectedMainDiff);
+      if (f.mainDiff !== "ALL") {
+        const targetMain = Number(f.mainDiff);
         const mDiffs = computeDiffs(d.mainNumbers);
         if (!mDiffs.includes(targetMain)) {
           return false;
         }
       }
-      if (selectedDigitDiff !== "ALL") {
-        const targetDigit = Number(selectedDigitDiff);
+      if (f.digitDiff !== "ALL") {
+        const targetDigit = Number(f.digitDiff);
         const dDiffs = computeMainDigitDiffs(d.mainNumbers);
         if (!dDiffs.includes(targetDigit)) {
           return false;
         }
       }
-      if (selectedEuroDiff !== "ALL") {
-        const targetEuro = Number(selectedEuroDiff);
+      if (f.euroDiff !== "ALL") {
+        const targetEuro = Number(f.euroDiff);
         const eDiffs = computeDiffs(d.euroNumbers);
         if (!eDiffs.includes(targetEuro)) {
           return false;
         }
       }
-      if (selectedEdgeDiff !== "ALL") {
-        const targetEdge = Number(selectedEdgeDiff);
+      if (f.edgeDiff !== "ALL") {
+        const targetEdge = Number(f.edgeDiff);
         const edDiffs = computeEdgeDigitDiffs(d.mainNumbers);
         if (!edDiffs.includes(targetEdge)) {
           return false;
         }
       }
+
+      const ns = getMainNumberStats(d.mainNumbers);
+      if (!matchesRange(ns.evenCount, f.evenMin, f.evenMax)) return false;
+      if (!matchesRange(ns.oddCount, f.oddMin, f.oddMax)) return false;
+      if (!matchesRange(ns.lowHalfCount, f.lowMin, f.lowMax)) return false;
+      if (!matchesRange(ns.highHalfCount, f.highMin, f.highMax)) return false;
+
       return true;
     });
 
-    updateStatsStrip(filtered, {
-      year: selectedYear,
-      mainDiff: selectedMainDiff,
-      digitDiff: selectedDigitDiff,
-      euroDiff: selectedEuroDiff,
-      edgeDiff: selectedEdgeDiff
-    });
+    updateStatsStrip(filtered, f);
 
     if (!filtered.length) {
       container.innerHTML = '<div class="empty-msg">Nu există extrageri pentru filtrele selectate.</div>';
@@ -854,22 +927,26 @@
     }
 
     const highlightOpts = {
-      mainDiff: selectedMainDiff !== "ALL" ? Number(selectedMainDiff) : NaN,
-      digitDiff: selectedDigitDiff !== "ALL" ? Number(selectedDigitDiff) : NaN,
-      euroDiff: selectedEuroDiff !== "ALL" ? Number(selectedEuroDiff) : NaN,
-      edgeDiff: selectedEdgeDiff !== "ALL" ? Number(selectedEdgeDiff) : NaN
+      mainDiff: f.mainDiff !== "ALL" ? Number(f.mainDiff) : NaN,
+      digitDiff: f.digitDiff !== "ALL" ? Number(f.digitDiff) : NaN,
+      euroDiff: f.euroDiff !== "ALL" ? Number(f.euroDiff) : NaN,
+      edgeDiff: f.edgeDiff !== "ALL" ? Number(f.edgeDiff) : NaN
     };
 
     container.innerHTML = filtered
       .map((d) => {
         const colorInfo = getMainColorsSummary(d.mainNumbers);
         const ns = getMainNumberStats(d.mainNumbers);
+        const colorToneClass = colorInfo.count >= 1 && colorInfo.count <= 4
+          ? " colors-" + colorInfo.count
+          : "";
+
         return `
           <div class="draw-card">
             <div class="draw-header">
               <span class="draw-date">${d.date}</span>
               <div class="draw-meta-right">
-                <span class="draw-colors-tag">Culori ${colorInfo.count}/${colorInfo.total}: ${colorInfo.codesText}</span>
+                <span class="draw-colors-tag${colorToneClass}">Culori ${colorInfo.count}/${colorInfo.total}: ${colorInfo.codesText}</span>
                 <span class="draw-year">${d.year || "-"}</span>
               </div>
             </div>
@@ -1303,11 +1380,9 @@
       if (e.target === this) closeFiltersModal();
     });
 
-    document.getElementById("year-filter").addEventListener("change", handleFilterChange);
-    document.getElementById("main-diff-filter").addEventListener("change", handleFilterChange);
-    document.getElementById("digit-diff-filter").addEventListener("change", handleFilterChange);
-    document.getElementById("euro-diff-filter").addEventListener("change", handleFilterChange);
-    document.getElementById("edge-diff-filter").addEventListener("change", handleFilterChange);
+    FILTER_IDS.forEach(function (id) {
+      document.getElementById(id).addEventListener("change", handleFilterChange);
+    });
     document.getElementById("reset-filters-btn").addEventListener("click", resetDiffAndYearFilters);
 
     document.getElementById("reload-btn").addEventListener("click", loadJsonFile);
