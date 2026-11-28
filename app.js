@@ -214,6 +214,13 @@
     return [c1, c2];
   }
 
+  function getActualDigits(num) {
+    const str = String(Math.abs(Math.trunc(Number(num))) || 0);
+    const firstDigit = Number(str.charAt(0));
+    const lastDigit = Number(str.charAt(str.length - 1));
+    return [firstDigit, lastDigit];
+  }
+
   function computeDigitDiff(num) {
     const [c1, c2] = getTwoDigits(num);
     return Math.abs(c1 - c2);
@@ -226,15 +233,15 @@
     return valid.map(computeDigitDiff);
   }
 
-  // Diferența dintre ultima cifră a numărului din față și prima cifră a numărului următor (doar cele 5 numere principale)
+  // Diferența dintre ultima cifră reală a numărului din față și prima cifră reală a numărului următor (doar cele 5 numere principale)
   function computeEdgeDigitDiffs(mainNums) {
     const valid = Array.isArray(mainNums)
       ? mainNums.slice(0, 5).map(Number).filter(function (n) { return Number.isFinite(n); })
       : [];
     const edgeDiffs = [];
     for (let i = 0; i < valid.length - 1; i++) {
-      const lastDigitPrev = getTwoDigits(valid[i])[1];
-      const firstDigitNext = getTwoDigits(valid[i + 1])[0];
+      const lastDigitPrev = getActualDigits(valid[i])[1];
+      const firstDigitNext = getActualDigits(valid[i + 1])[0];
       edgeDiffs.push(Math.abs(lastDigitPrev - firstDigitNext));
     }
     return edgeDiffs;
