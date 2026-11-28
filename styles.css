@@ -12,6 +12,7 @@
   --secondary-hover: #475569;
   --accent: #38bdf8;
   --digit-diff: #a78bfa;
+  --edge-diff: #fb923c;
   --euro-bg: #eab308;
   --euro-text: #0f172a;
   --euro-digit-color: #ffffff;
@@ -44,6 +45,7 @@ html[data-theme="light"] {
   --secondary-hover: #cbd5e1;
   --accent: #0284c7;
   --digit-diff: #7c3aed;
+  --edge-diff: #ea580c;
   --euro-bg: #eab308;
   --euro-text: #0f172a;
   --euro-digit-color: #0f172a;
@@ -488,6 +490,22 @@ select {
   color: var(--euro-digit-color);
 }
 
+.edge-digit-ball {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background-color: var(--surface-2);
+  color: var(--edge-diff);
+  border: 1px solid var(--border);
+  transition: transform 0.15s ease;
+}
+
 /* Tab 2: Generator */
 .generator-body {
   flex: 1;
@@ -584,6 +602,29 @@ select {
 
 .gen-diff-ball.euro {
   color: var(--euro-bg);
+}
+
+.gen-edge-diffs-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 34px;
+  min-height: 28px;
+}
+
+.gen-edge-ball {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background-color: var(--surface-2);
+  color: var(--edge-diff);
+  border: 1px solid var(--border);
 }
 
 .gen-actions {
