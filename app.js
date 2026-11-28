@@ -247,7 +247,7 @@
     }
   }
 
-  /* --- EXTRAGERI, BILE DISTANȚE, DISTANȚĂ CIFRE & TRANZIȚII CIFRE --- */
+  /* --- EXTRAGERI, BILE DISTANȚE, DISTANȚĂ CIFRE, TRANZIȚII & STATISTICI --- */
   function computeDiffs(nums) {
     const valid = Array.isArray(nums)
       ? nums.map(Number).filter(function (n) { return Number.isFinite(n); })
@@ -329,6 +329,36 @@
       count: presentList.length,
       total: 4,
       codesText: presentList.length ? presentList.join(" ") : "-"
+    };
+  }
+
+  // Număr P (par) / I (impar) și jumătăți 1–25 / 26–50 pentru cele 5 numere principale
+  function getMainNumberStats(mainNumbers) {
+    let evenCount = 0;
+    let oddCount = 0;
+    let lowHalfCount = 0;
+    let highHalfCount = 0;
+
+    (mainNumbers || []).slice(0, 5).forEach(function (raw) {
+      const n = Number(raw);
+      if (!Number.isFinite(n)) return;
+      if (n % 2 === 0) {
+        evenCount++;
+      } else {
+        oddCount++;
+      }
+      if (n <= 25) {
+        lowHalfCount++;
+      } else {
+        highHalfCount++;
+      }
+    });
+
+    return {
+      evenCount,
+      oddCount,
+      lowHalfCount,
+      highHalfCount
     };
   }
 
@@ -684,13 +714,25 @@
   function updateStatsStrip(filteredDraws, filterState) {
     const summaryEl = document.getElementById("stats-summary");
     const parityEl = document.getElementById("stats-parity");
+    const breakdownEl = document.getElementById("stats-breakdown");
     if (!summaryEl || !parityEl) return;
 
     const counts = { PP: 0, PI: 0, IP: 0, II: 0 };
+    let totalEven = 0;
+    let totalOdd = 0;
+    let totalLowHalf = 0;
+    let totalHighHalf = 0;
     let hitsCount = 0;
 
     filteredDraws.forEach(function (d) {
-      (d.mainNumbers || []).slice(0, 5).forEach(function (n) {
+      const mainFive = (d.mainNumbers || []).slice(0, 5);
+      const ns = getMainNumberStats(mainFive);
+      totalEven += ns.evenCount;
+      totalOdd += ns.oddCount;
+      totalLowHalf += ns.lowHalfCount;
+      totalHighHalf += ns.highHalfCount;
+
+      mainFive.forEach(function (n) {
         const code = getDigitParityCode(n);
         if (counts[code] !== undefined) counts[code]++;
         if (filterState.digitDiff !== "ALL" && computeDigitDiff(n) === Number(filterState.digitDiff)) {
@@ -739,6 +781,20 @@
         );
       })
       .join("");
+
+    if (breakdownEl) {
+      breakdownEl.innerHTML =
+        '<span>Par / Impar: <strong>' +
+        totalEven +
+        "P</strong> · <strong>" +
+        totalOdd +
+        "I</strong></span>" +
+        "<span>Jumătăți: <strong>1–25: " +
+        totalLowHalf +
+        "</strong> · <strong>26–50: " +
+        totalHighHalf +
+        "</strong></span>";
+    }
   }
 
   function renderDraws() {
@@ -807,6 +863,7 @@
     container.innerHTML = filtered
       .map((d) => {
         const colorInfo = getMainColorsSummary(d.mainNumbers);
+        const ns = getMainNumberStats(d.mainNumbers);
         return `
           <div class="draw-card">
             <div class="draw-header">
@@ -815,6 +872,10 @@
                 <span class="draw-colors-tag">Culori ${colorInfo.count}/${colorInfo.total}: ${colorInfo.codesText}</span>
                 <span class="draw-year">${d.year || "-"}</span>
               </div>
+            </div>
+            <div class="draw-submeta">
+              <span class="draw-submeta-pill">${ns.evenCount}P · ${ns.oddCount}I</span>
+              <span class="draw-submeta-pill">1–25: ${ns.lowHalfCount} · 26–50: ${ns.highHalfCount}</span>
             </div>
             ${renderDrawMatrix(d.mainNumbers, d.euroNumbers, highlightOpts)}
           </div>
