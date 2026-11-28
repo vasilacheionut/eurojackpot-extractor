@@ -376,23 +376,27 @@
 
   function getMainColorsSummary(mainNumbers) {
     const orderedCodes = ["PP", "PI", "IP", "II"];
-    const presentSet = new Set();
+    const counts = { PP: 0, PI: 0, IP: 0, II: 0 };
 
     (mainNumbers || []).slice(0, 5).forEach(function (n) {
       const code = getDigitParityCode(n);
-      if (orderedCodes.includes(code)) {
-        presentSet.add(code);
+      if (Object.prototype.hasOwnProperty.call(counts, code)) {
+        counts[code]++;
       }
     });
 
     const presentList = orderedCodes.filter(function (c) {
-      return presentSet.has(c);
+      return counts[c] > 0;
     });
+
+    const codesText = presentList.length
+      ? presentList.map(function (c) { return counts[c] + c; }).join(" ")
+      : "-";
 
     return {
       count: presentList.length,
       total: 4,
-      codesText: presentList.length ? presentList.join(" ") : "-"
+      codesText: codesText
     };
   }
 
