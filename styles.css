@@ -526,6 +526,7 @@ select {
   align-items: center;
   justify-content: space-between;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .draw-date {
@@ -537,8 +538,9 @@ select {
 .draw-meta-right {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-width: 0;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .draw-colors-tag {
@@ -575,6 +577,26 @@ select {
   color: var(--tag-4-fg);
   background-color: var(--tag-4-bg);
   border-color: var(--tag-4-bd);
+}
+
+.draw-color-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.draw-color-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .draw-year {
