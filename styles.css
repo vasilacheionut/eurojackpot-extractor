@@ -809,32 +809,43 @@ select {
 .digit-diff-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .digit-diff-row {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 8px;
-  border-radius: 8px;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 10px;
   background-color: var(--surface-2);
   border: 1px solid var(--border);
-  font-size: 0.85rem;
 }
 
 .digit-diff-key {
   font-weight: 800;
   color: var(--accent);
   min-width: 24px;
+  padding-top: 4px;
   font-variant-numeric: tabular-nums;
 }
 
 .digit-diff-vals {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 5px;
   flex: 1;
+}
+
+.digit-diff-vals .mini-chip {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  margin-right: 0;
+  padding: 0;
+  border-radius: 7px;
+  font-size: 0.78rem;
 }
 
 /* Tab 4: JSON */
