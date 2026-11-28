@@ -33,13 +33,16 @@
             <span>Filtre</span>
             <span class="active-filters-badge" id="active-filters-badge" hidden>0</span>
           </button>
-          <span class="active-filters-summary" id="active-filters-summary">Toți anii · Toate distanțele</span>
+          <span class="active-filters-summary" id="active-filters-summary">Toți anii · Fără filtre distanță</span>
           <button type="button" class="reset-filters-btn" id="reset-filters-btn">Reset</button>
         </div>
 
         <div class="stats-strip" id="stats-strip">
-          <span id="stats-summary">Rezultate: <strong>0</strong></span>
-          <span class="stats-parity-pills" id="stats-parity"></span>
+          <div class="stats-line-top">
+            <span id="stats-summary">Extrageri: <strong>0</strong></span>
+            <span class="stats-parity-pills" id="stats-parity"></span>
+          </div>
+          <div class="stats-line-bottom" id="stats-breakdown"></div>
         </div>
 
         <div class="draws-list" id="draws-list">
