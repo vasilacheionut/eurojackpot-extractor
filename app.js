@@ -11,6 +11,10 @@
     digitDiff: "ALL",
     euroDiff: "ALL",
     edgeDiff: "ALL",
+    ppMin: "ALL",
+    piMin: "ALL",
+    ipMin: "ALL",
+    iiMin: "ALL",
     evenMin: "ALL",
     evenMax: "ALL",
     oddMin: "ALL",
@@ -27,6 +31,10 @@
     "digit-diff-filter",
     "euro-diff-filter",
     "edge-diff-filter",
+    "pp-min-filter",
+    "pi-min-filter",
+    "ip-min-filter",
+    "ii-min-filter",
     "even-min-filter",
     "even-max-filter",
     "odd-min-filter",
@@ -162,6 +170,10 @@
       digitDiff: document.getElementById("digit-diff-filter").value || "ALL",
       euroDiff: document.getElementById("euro-diff-filter").value || "ALL",
       edgeDiff: document.getElementById("edge-diff-filter").value || "ALL",
+      ppMin: document.getElementById("pp-min-filter").value || "ALL",
+      piMin: document.getElementById("pi-min-filter").value || "ALL",
+      ipMin: document.getElementById("ip-min-filter").value || "ALL",
+      iiMin: document.getElementById("ii-min-filter").value || "ALL",
       evenMin: document.getElementById("even-min-filter").value || "ALL",
       evenMax: document.getElementById("even-max-filter").value || "ALL",
       oddMin: document.getElementById("odd-min-filter").value || "ALL",
@@ -212,6 +224,20 @@
       activeCount++;
       parts.push("Tranz:" + f.edgeDiff);
     }
+
+    const catSpecs = [
+      { val: f.ppMin, label: "PP" },
+      { val: f.piMin, label: "PI" },
+      { val: f.ipMin, label: "IP" },
+      { val: f.iiMin, label: "II" }
+    ];
+
+    catSpecs.forEach(function (c) {
+      if (c.val !== "ALL") {
+        activeCount++;
+        parts.push(c.label + ">=" + c.val);
+      }
+    });
 
     const rangeSpecs = [
       { min: f.evenMin, max: f.evenMax, label: "P" },
@@ -374,16 +400,20 @@
     return "parity-" + getDigitParityCode(num);
   }
 
-  function getMainColorsSummary(mainNumbers) {
-    const orderedCodes = ["PP", "PI", "IP", "II"];
+  function getCategoryCounts(mainNumbers) {
     const counts = { PP: 0, PI: 0, IP: 0, II: 0 };
-
     (mainNumbers || []).slice(0, 5).forEach(function (n) {
       const code = getDigitParityCode(n);
       if (Object.prototype.hasOwnProperty.call(counts, code)) {
         counts[code]++;
       }
     });
+    return counts;
+  }
+
+  function getMainColorsSummary(mainNumbers) {
+    const orderedCodes = ["PP", "PI", "IP", "II"];
+    const counts = getCategoryCounts(mainNumbers);
 
     const items = orderedCodes
       .filter(function (c) {
@@ -773,6 +803,10 @@
     setSelectIfAvailable(document.getElementById("digit-diff-filter"), saved.digitDiff);
     setSelectIfAvailable(document.getElementById("euro-diff-filter"), saved.euroDiff);
     setSelectIfAvailable(document.getElementById("edge-diff-filter"), saved.edgeDiff);
+    setSelectIfAvailable(document.getElementById("pp-min-filter"), saved.ppMin);
+    setSelectIfAvailable(document.getElementById("pi-min-filter"), saved.piMin);
+    setSelectIfAvailable(document.getElementById("ip-min-filter"), saved.ipMin);
+    setSelectIfAvailable(document.getElementById("ii-min-filter"), saved.iiMin);
     setSelectIfAvailable(document.getElementById("even-min-filter"), saved.evenMin);
     setSelectIfAvailable(document.getElementById("even-max-filter"), saved.evenMax);
     setSelectIfAvailable(document.getElementById("odd-min-filter"), saved.oddMin);
@@ -920,6 +954,12 @@
           return false;
         }
       }
+
+      const catCounts = getCategoryCounts(d.mainNumbers);
+      if (f.ppMin !== "ALL" && catCounts.PP < Number(f.ppMin)) return false;
+      if (f.piMin !== "ALL" && catCounts.PI < Number(f.piMin)) return false;
+      if (f.ipMin !== "ALL" && catCounts.IP < Number(f.ipMin)) return false;
+      if (f.iiMin !== "ALL" && catCounts.II < Number(f.iiMin)) return false;
 
       const ns = getMainNumberStats(d.mainNumbers);
       if (!matchesRange(ns.evenCount, f.evenMin, f.evenMax)) return false;
