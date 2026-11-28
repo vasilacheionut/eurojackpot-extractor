@@ -525,28 +525,31 @@ select {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
 }
 
 .draw-date {
-  font-size: 1rem;
+  font-size: 0.96rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .draw-meta-right {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
 }
 
 .draw-colors-tag {
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: var(--tag-3-fg);
   background-color: var(--tag-3-bg);
   border: 1px solid var(--tag-3-bd);
   border-radius: 999px;
-  padding: 2px 8px;
+  padding: 2px 7px;
   white-space: nowrap;
 }
 
@@ -575,9 +578,10 @@ select {
 }
 
 .draw-year {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--muted);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .draw-submeta {
