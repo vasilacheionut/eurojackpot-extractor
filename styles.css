@@ -272,9 +272,16 @@ select {
 
 .diff-filters-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
   align-items: center;
+}
+
+.edge-filter-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: end;
 }
 
 .diff-filter-item {
@@ -301,8 +308,7 @@ select {
 }
 
 .reset-filters-btn {
-  align-self: flex-end;
-  padding: 7px 9px;
+  padding: 7px 12px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background-color: var(--secondary);
@@ -310,6 +316,7 @@ select {
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .reset-filters-btn:hover {
