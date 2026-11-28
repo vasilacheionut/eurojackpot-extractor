@@ -109,16 +109,19 @@
   function readSavedFilters() {
     try {
       const raw = window.localStorage.getItem(FILTERS_STORAGE_KEY);
-      if (!raw) return { year: "ALL", mainDiff: "ALL", digitDiff: "ALL", euroDiff: "ALL" };
+      if (!raw) {
+        return { year: "ALL", mainDiff: "ALL", digitDiff: "ALL", euroDiff: "ALL", edgeDiff: "ALL" };
+      }
       const parsed = JSON.parse(raw);
       return {
         year: parsed && parsed.year ? String(parsed.year) : "ALL",
         mainDiff: parsed && parsed.mainDiff ? String(parsed.mainDiff) : "ALL",
         digitDiff: parsed && parsed.digitDiff ? String(parsed.digitDiff) : "ALL",
-        euroDiff: parsed && parsed.euroDiff ? String(parsed.euroDiff) : "ALL"
+        euroDiff: parsed && parsed.euroDiff ? String(parsed.euroDiff) : "ALL",
+        edgeDiff: parsed && parsed.edgeDiff ? String(parsed.edgeDiff) : "ALL"
       };
     } catch (e) {
-      return { year: "ALL", mainDiff: "ALL", digitDiff: "ALL", euroDiff: "ALL" };
+      return { year: "ALL", mainDiff: "ALL", digitDiff: "ALL", euroDiff: "ALL", edgeDiff: "ALL" };
     }
   }
 
@@ -127,7 +130,8 @@
       year: document.getElementById("year-filter").value || "ALL",
       mainDiff: document.getElementById("main-diff-filter").value || "ALL",
       digitDiff: document.getElementById("digit-diff-filter").value || "ALL",
-      euroDiff: document.getElementById("euro-diff-filter").value || "ALL"
+      euroDiff: document.getElementById("euro-diff-filter").value || "ALL",
+      edgeDiff: document.getElementById("edge-diff-filter").value || "ALL"
     };
     try {
       window.localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(payload));
@@ -381,6 +385,7 @@
     const targetMainDiff = opts.mainDiff;
     const targetDigitDiff = opts.digitDiff;
     const targetEuroDiff = opts.euroDiff;
+    const targetEdgeDiff = opts.edgeDiff;
 
     const mainFive = (mainNumbers || []).slice(0, 5);
     const mainDiffs = computeDiffs(mainFive);
@@ -429,8 +434,11 @@
 
     edgeDigitDiffs.forEach(function (ed, idx) {
       const col = idx * 2 + 2;
+      const isEdgeMatch = Number.isFinite(targetEdgeDiff) && ed === targetEdgeDiff;
       cellsHtml +=
-        '<span class="edge-digit-ball" title="Ultima cifră față vs. prima cifră după" style="grid-column:' +
+        '<span class="edge-digit-ball' +
+        (isEdgeMatch ? " match-highlight" : "") +
+        '" title="Ultima cifră față vs. prima cifră după" style="grid-column:' +
         col +
         ';grid-row:4;">' +
         ed +
@@ -527,10 +535,12 @@
     const mainSelect = document.getElementById("main-diff-filter");
     const digitSelect = document.getElementById("digit-diff-filter");
     const euroSelect = document.getElementById("euro-diff-filter");
+    const edgeSelect = document.getElementById("edge-diff-filter");
 
     const mainSet = new Set();
     const digitSet = new Set();
     const euroSet = new Set();
+    const edgeSet = new Set();
 
     draws.forEach(function (d) {
       computeDiffs(d.mainNumbers).forEach(function (val) {
@@ -542,11 +552,15 @@
       computeDiffs(d.euroNumbers).forEach(function (val) {
         euroSet.add(val);
       });
+      computeEdgeDigitDiffs(d.mainNumbers).forEach(function (val) {
+        edgeSet.add(val);
+      });
     });
 
     const sortedMain = Array.from(mainSet).sort(function (a, b) { return a - b; });
     const sortedDigit = Array.from(digitSet).sort(function (a, b) { return a - b; });
     const sortedEuro = Array.from(euroSet).sort(function (a, b) { return a - b; });
+    const sortedEdge = Array.from(edgeSet).sort(function (a, b) { return a - b; });
 
     mainSelect.innerHTML = '<option value="ALL">Toate</option>';
     sortedMain.forEach(function (val) {
@@ -571,6 +585,16 @@
       opt.textContent = "Dist. " + val;
       euroSelect.appendChild(opt);
     });
+
+    if (edgeSelect) {
+      edgeSelect.innerHTML = '<option value="ALL">Toate</option>';
+      sortedEdge.forEach(function (val) {
+        const opt = document.createElement("option");
+        opt.value = String(val);
+        opt.textContent = "Tranziție " + val;
+        edgeSelect.appendChild(opt);
+      });
+    }
   }
 
   function applySavedFiltersToSelects() {
@@ -579,6 +603,7 @@
     setSelectIfAvailable(document.getElementById("main-diff-filter"), saved.mainDiff);
     setSelectIfAvailable(document.getElementById("digit-diff-filter"), saved.digitDiff);
     setSelectIfAvailable(document.getElementById("euro-diff-filter"), saved.euroDiff);
+    setSelectIfAvailable(document.getElementById("edge-diff-filter"), saved.edgeDiff);
     saveCurrentFilters();
   }
 
@@ -592,6 +617,7 @@
     document.getElementById("main-diff-filter").value = "ALL";
     document.getElementById("digit-diff-filter").value = "ALL";
     document.getElementById("euro-diff-filter").value = "ALL";
+    document.getElementById("edge-diff-filter").value = "ALL";
     saveCurrentFilters();
     renderDraws();
   }
@@ -622,12 +648,18 @@
           return x === Number(filterState.euroDiff);
         }).length;
       }
+      if (filterState.edgeDiff !== "ALL") {
+        hitsCount += computeEdgeDigitDiffs(d.mainNumbers).filter(function (x) {
+          return x === Number(filterState.edgeDiff);
+        }).length;
+      }
     });
 
     const hasDiffFilter =
       filterState.mainDiff !== "ALL" ||
       filterState.digitDiff !== "ALL" ||
-      filterState.euroDiff !== "ALL";
+      filterState.euroDiff !== "ALL" ||
+      filterState.edgeDiff !== "ALL";
 
     summaryEl.innerHTML =
       "Extrageri: <strong>" +
@@ -656,6 +688,7 @@
     const selectedMainDiff = document.getElementById("main-diff-filter").value;
     const selectedDigitDiff = document.getElementById("digit-diff-filter").value;
     const selectedEuroDiff = document.getElementById("euro-diff-filter").value;
+    const selectedEdgeDiff = document.getElementById("edge-diff-filter").value;
 
     const filtered = allDrawsDesc.filter(function (d) {
       if (selectedYear !== "ALL" && String(d.year) !== selectedYear) {
@@ -682,6 +715,13 @@
           return false;
         }
       }
+      if (selectedEdgeDiff !== "ALL") {
+        const targetEdge = Number(selectedEdgeDiff);
+        const edDiffs = computeEdgeDigitDiffs(d.mainNumbers);
+        if (!edDiffs.includes(targetEdge)) {
+          return false;
+        }
+      }
       return true;
     });
 
@@ -689,7 +729,8 @@
       year: selectedYear,
       mainDiff: selectedMainDiff,
       digitDiff: selectedDigitDiff,
-      euroDiff: selectedEuroDiff
+      euroDiff: selectedEuroDiff,
+      edgeDiff: selectedEdgeDiff
     });
 
     if (!filtered.length) {
@@ -700,7 +741,8 @@
     const highlightOpts = {
       mainDiff: selectedMainDiff !== "ALL" ? Number(selectedMainDiff) : NaN,
       digitDiff: selectedDigitDiff !== "ALL" ? Number(selectedDigitDiff) : NaN,
-      euroDiff: selectedEuroDiff !== "ALL" ? Number(selectedEuroDiff) : NaN
+      euroDiff: selectedEuroDiff !== "ALL" ? Number(selectedEuroDiff) : NaN,
+      edgeDiff: selectedEdgeDiff !== "ALL" ? Number(selectedEdgeDiff) : NaN
     };
 
     container.innerHTML = filtered
@@ -1136,6 +1178,7 @@
     document.getElementById("main-diff-filter").addEventListener("change", handleFilterChange);
     document.getElementById("digit-diff-filter").addEventListener("change", handleFilterChange);
     document.getElementById("euro-diff-filter").addEventListener("change", handleFilterChange);
+    document.getElementById("edge-diff-filter").addEventListener("change", handleFilterChange);
     document.getElementById("reset-filters-btn").addEventListener("click", resetDiffAndYearFilters);
 
     document.getElementById("reload-btn").addEventListener("click", loadJsonFile);
