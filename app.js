@@ -5,6 +5,13 @@
   const HISTORY_STORAGE_KEY = "eurojackpot_gen_history";
   const DRAWS_CACHE_KEY = "eurojackpot_draws_cache";
 
+  const SAMPLE_DRAW_12_12_2025 = {
+    date: "12.12.2025",
+    year: 2025,
+    mainNumbers: [2, 25, 27, 37, 50],
+    euroNumbers: [2, 11]
+  };
+
   const DEFAULT_FILTERS = {
     year: "ALL",
     mainDiff: "ALL",
@@ -300,7 +307,7 @@
   }
 
   function switchTab(tabName) {
-    const tabs = ["draws", "generator", "matrix", "json"];
+    const tabs = ["draws", "generator", "matrix", "about", "json"];
     tabs.forEach(function (t) {
       const active = t === tabName;
       const btn = document.getElementById("tab-" + t + "-btn");
@@ -475,6 +482,50 @@
     if (minStr !== "ALL" && val < Number(minStr)) return false;
     if (maxStr !== "ALL" && val > Number(maxStr)) return false;
     return true;
+  }
+
+  function buildDrawCardHtml(d, highlightOpts) {
+    const colorInfo = getMainColorsSummary(d.mainNumbers);
+    const ns = getMainNumberStats(d.mainNumbers);
+    const colorToneClass = colorInfo.count >= 1 && colorInfo.count <= 4
+      ? " colors-" + colorInfo.count
+      : "";
+
+    const chipsHtml = colorInfo.items
+      .map(function (it) {
+        return (
+          '<span class="draw-color-chip parity-' +
+          it.code +
+          '">' +
+          it.label +
+          "</span>"
+        );
+      })
+      .join("");
+
+    return `
+      <div class="draw-card">
+        <div class="draw-header">
+          <span class="draw-date">${d.date}</span>
+          <div class="draw-meta-right">
+            <span class="draw-colors-tag${colorToneClass}">Culori ${colorInfo.count}/${colorInfo.total}</span>
+            <span class="draw-color-pills">${chipsHtml}</span>
+            <span class="draw-year">${d.year || "-"}</span>
+          </div>
+        </div>
+        <div class="draw-submeta">
+          <span class="draw-submeta-pill">${ns.evenCount}P · ${ns.oddCount}I</span>
+          <span class="draw-submeta-pill">1–25: ${ns.lowHalfCount} · 26–50: ${ns.highHalfCount}</span>
+        </div>
+        ${renderDrawMatrix(d.mainNumbers, d.euroNumbers, highlightOpts)}
+      </div>
+    `;
+  }
+
+  function renderAboutSampleCard() {
+    const container = document.getElementById("about-sample-card");
+    if (!container) return;
+    container.innerHTML = buildDrawCardHtml(SAMPLE_DRAW_12_12_2025, {});
   }
 
   /* --- PANOU 1-50, PARITATE PP/PI/IP/II & LISTĂ DISTANȚE CIFRE --- */
@@ -997,43 +1048,7 @@
     };
 
     container.innerHTML = filtered
-      .map((d) => {
-        const colorInfo = getMainColorsSummary(d.mainNumbers);
-        const ns = getMainNumberStats(d.mainNumbers);
-        const colorToneClass = colorInfo.count >= 1 && colorInfo.count <= 4
-          ? " colors-" + colorInfo.count
-          : "";
-
-        const chipsHtml = colorInfo.items
-          .map(function (it) {
-            return (
-              '<span class="draw-color-chip parity-' +
-              it.code +
-              '">' +
-              it.label +
-              "</span>"
-            );
-          })
-          .join("");
-
-        return `
-          <div class="draw-card">
-            <div class="draw-header">
-              <span class="draw-date">${d.date}</span>
-              <div class="draw-meta-right">
-                <span class="draw-colors-tag${colorToneClass}">Culori ${colorInfo.count}/${colorInfo.total}</span>
-                <span class="draw-color-pills">${chipsHtml}</span>
-                <span class="draw-year">${d.year || "-"}</span>
-              </div>
-            </div>
-            <div class="draw-submeta">
-              <span class="draw-submeta-pill">${ns.evenCount}P · ${ns.oddCount}I</span>
-              <span class="draw-submeta-pill">1–25: ${ns.lowHalfCount} · 26–50: ${ns.highHalfCount}</span>
-            </div>
-            ${renderDrawMatrix(d.mainNumbers, d.euroNumbers, highlightOpts)}
-          </div>
-        `;
-      })
+      .map((d) => buildDrawCardHtml(d, highlightOpts))
       .join("");
   }
 
@@ -1428,6 +1443,7 @@
     initTheme();
     registerServiceWorker();
     renderMatrixTab();
+    renderAboutSampleCard();
     updateFilterBadgeAndSummary();
 
     document.getElementById("brand-reload-link").addEventListener("click", reloadPage);
@@ -1443,6 +1459,9 @@
     });
     document.getElementById("tab-matrix-btn").addEventListener("click", function () {
       switchTab("matrix");
+    });
+    document.getElementById("tab-about-btn").addEventListener("click", function () {
+      switchTab("about");
     });
     document.getElementById("tab-json-btn").addEventListener("click", function () {
       switchTab("json");
