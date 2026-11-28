@@ -492,7 +492,8 @@
     if (legendEl) {
       legendEl.innerHTML = parityMeta
         .map(function (item) {
-          const chipsHtml = groups[item.code]
+          const list = groups[item.code] || [];
+          const chipsHtml = list
             .map(function (num) {
               return '<span class="mini-chip parity-' + item.code + '">' + num + "</span>";
             })
@@ -508,7 +509,9 @@
             "</span>" +
             '<span class="color-name">' +
             item.label +
-            "</span>" +
+            " (" +
+            list.length +
+            ")</span>" +
             "</div>" +
             '<div class="legend-nums">' +
             chipsHtml +
