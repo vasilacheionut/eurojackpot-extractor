@@ -28,42 +28,13 @@
     <main class="main-content">
       <!-- TAB 1: EXTRAGERI -->
       <section class="tab-panel active" id="panel-draws" role="tabpanel">
-        <div class="filter-bar">
-          <div class="filter-row">
-            <label for="year-filter">An (2026–2012):</label>
-            <select id="year-filter">
-              <option value="ALL">Toți anii</option>
-            </select>
-          </div>
-          <div class="diff-filters-grid">
-            <div class="diff-filter-item">
-              <label for="main-diff-filter">Dist. 4 bile</label>
-              <select id="main-diff-filter">
-                <option value="ALL">Toate</option>
-              </select>
-            </div>
-            <div class="diff-filter-item">
-              <label for="digit-diff-filter">Dist. cifre (5 nr.)</label>
-              <select id="digit-diff-filter">
-                <option value="ALL">Toate</option>
-              </select>
-            </div>
-            <div class="diff-filter-item">
-              <label for="euro-diff-filter">Dist. 2 stele</label>
-              <select id="euro-diff-filter">
-                <option value="ALL">Toate</option>
-              </select>
-            </div>
-          </div>
-          <div class="edge-filter-row">
-            <div class="diff-filter-item">
-              <label for="edge-diff-filter">Tranziții cifre (5 nr.)</label>
-              <select id="edge-diff-filter">
-                <option value="ALL">Toate</option>
-              </select>
-            </div>
-            <button type="button" class="reset-filters-btn" id="reset-filters-btn">Reset</button>
-          </div>
+        <div class="filter-bar compact-bar">
+          <button type="button" class="open-filters-btn" id="open-filters-btn">
+            <span>Filtre</span>
+            <span class="active-filters-badge" id="active-filters-badge" hidden>0</span>
+          </button>
+          <span class="active-filters-summary" id="active-filters-summary">Toți anii · Toate distanțele</span>
+          <button type="button" class="reset-filters-btn" id="reset-filters-btn">Reset</button>
         </div>
 
         <div class="stats-strip" id="stats-strip">
@@ -148,6 +119,60 @@
         </div>
       </section>
     </main>
+
+    <!-- DIALOG FILTRE EXTRAGERI -->
+    <div class="modal-backdrop" id="filters-modal" role="dialog" aria-modal="true" aria-labelledby="filters-modal-title" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 class="modal-title" id="filters-modal-title">Setări filtre extrageri</h2>
+          <button type="button" class="modal-close-btn" id="close-filters-x" aria-label="Închide">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="modal-field">
+            <label for="year-filter">An (2026–2012)</label>
+            <select id="year-filter">
+              <option value="ALL">Toți anii</option>
+            </select>
+          </div>
+
+          <div class="modal-grid-2">
+            <div class="modal-field">
+              <label for="main-diff-filter">Dist. 4 bile</label>
+              <select id="main-diff-filter">
+                <option value="ALL">Toate</option>
+              </select>
+            </div>
+            <div class="modal-field">
+              <label for="digit-diff-filter">Dist. cifre (5 nr.)</label>
+              <select id="digit-diff-filter">
+                <option value="ALL">Toate</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-grid-2">
+            <div class="modal-field">
+              <label for="euro-diff-filter">Dist. 2 stele</label>
+              <select id="euro-diff-filter">
+                <option value="ALL">Toate</option>
+              </select>
+            </div>
+            <div class="modal-field">
+              <label for="edge-diff-filter">Tranziții cifre (5 nr.)</label>
+              <select id="edge-diff-filter">
+                <option value="ALL">Toate</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="action-btn btn-secondary" id="modal-reset-btn">Reset</button>
+          <button type="button" class="action-btn btn-primary" id="modal-done-btn">Gata</button>
+        </div>
+      </div>
+    </div>
 
     <nav class="bottom-nav" role="tablist">
       <button type="button" class="nav-btn active" id="tab-draws-btn" role="tab" aria-selected="true">
